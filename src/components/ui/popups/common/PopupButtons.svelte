@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { isPopupExpanded, togglePopupExpanded } from "@/lib/ui/expandedPopups.js";
-	import { Eye, EyeClosed, Navigation, Share2 } from "lucide-svelte";
+	import { Copy, Eye, EyeClosed, Navigation, Share2 } from "lucide-svelte";
 	import Button from "@/components/ui/input/Button.svelte";
 	import * as m from "@/lib/paraglide/messages";
 
 	import { getCurrentPath } from "@/lib/mapObjects/interact";
-	import { backupShareUrl, canBackupShare } from "@/lib/utils/device";
+	import {
+		backupShareUrl,
+		canNativeShare,
+		copyToClipboard,
+		hasClipboardWrite
+	} from "@/lib/utils/device";
 	import { getMapsUrl } from "@/lib/utils/mapUrl";
 	import { Coords } from "@/lib/utils/coordinates";
 	import { getShareTitle } from "@/lib/features/shareTexts";
@@ -52,11 +57,18 @@
 		</span>
 	</Button>
 
-	{#if canBackupShare({ url: getShareUrl() })}
+	{#if canNativeShare({ url: getShareUrl() })}
 		<Button variant="outline" tag="button" onclick={() => backupShareUrl(getShareUrl())}>
 			<Share2 size="18" />
 			<span class="@max-[406px]:hidden">
 				{m.popup_share()}
+			</span>
+		</Button>
+	{:else if hasClipboardWrite()}
+		<Button variant="outline" tag="button" onclick={() => copyToClipboard(getShareUrl())}>
+			<Copy size="18" />
+			<span class="@max-[406px]:hidden">
+				{m.copy_link()}
 			</span>
 		</Button>
 	{/if}

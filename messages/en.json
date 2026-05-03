@@ -490,5 +490,6 @@
 	"join_server": "Join Server",
 	"unknown_league": "Unknown League",
 	"target_cp": "Target CP",
-	"considered_max_level": "Considered max level"
+	"considered_max_level": "Considered max level",
+	"copy_link": "Copy link"
 }
