@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from "./$types";
 	import { browser } from "$app/environment";
-	import Metadata from "@/components/utils/Metadata.svelte";
 	import * as m from "@/lib/paraglide/messages";
 	import {
 		getAttributeLabelCp,
@@ -25,6 +24,7 @@
 	} from "@/lib/features/filters/makeAttributeChipLabel";
 	import RedirectFlash from "@/components/ui/RedirectFlash.svelte";
 	import { makeAttributeCharacterLabel } from "@/lib/features/filters/filterUtilsInvasion";
+	import { useMetadata } from "@/lib/ui/metadata.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -116,10 +116,8 @@
 		}
 		return text;
 	});
-</script>
 
-{#if !browser && data}
-	<Metadata {title} embedTitle={title} description={text} />
-{/if}
+	useMetadata(() => (!browser && data ? { title, embedTitle: title, description: text } : {}));
+</script>
 
 <RedirectFlash goal={title} />

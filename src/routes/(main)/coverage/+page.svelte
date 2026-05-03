@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from "@/lib/paraglide/messages";
-	import Metadata from "@/components/utils/Metadata.svelte";
 	import MapCoverage from "@/components/map/MapCoverage.svelte";
 	import { closeMenu, Menu, openMenu } from "@/lib/ui/menus.svelte.js";
 	import Fabs from "@/components/ui/fab/Fabs.svelte";
@@ -24,9 +23,11 @@
 	import { setMap } from "@/lib/map/map.svelte";
 	import CoverageMapMenu from "@/components/menus/coverageMap/CoverageMapMenu.svelte";
 	import { clearMapPositionUrlParams } from "@/components/map/mapPositionParams";
+	import { useMetadata } from "@/lib/ui/metadata.svelte";
 
 	let map: maplibre.Map | undefined = $state(undefined);
 	openMenu(Menu.COVERAGE_MAP);
+	useMetadata(() => ({ title: m.nav_coveragemap() }));
 
 	onMount(async () => {
 		await tick();
@@ -41,8 +42,6 @@
 		closeMenu();
 	});
 </script>
-
-<Metadata title={m.nav_coveragemap()} />
 
 {#if !isWebglSupported()}
 	<ErrorPageWebGl />

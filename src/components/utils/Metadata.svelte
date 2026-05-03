@@ -1,30 +1,19 @@
 <script lang="ts">
 	import { getConfig } from "@/lib/services/config/config";
-	import { onDestroy, onMount } from "svelte";
-
-	let {
-		title,
-		embedTitle,
-		description,
-		thumbnail,
-		image,
-		color
-	}: {
-		title?: string;
-		embedTitle?: string;
-		description?: string;
-		thumbnail?: string;
-		image?: string;
-		color?: string;
-	} = $props();
+	import { getCurrentMetadata } from "@/lib/ui/metadata.svelte";
 
 	let config = $derived(getConfig());
 	let general = $derived(config.general);
+	let metadata = $derived(getCurrentMetadata());
+	let title = $derived(metadata.title);
+	let embedTitle = $derived(metadata.embedTitle);
+	let description = $derived(metadata.description);
+	let thumbnail = $derived(metadata.thumbnail);
+	let image = $derived(metadata.image);
+	let color = $derived(metadata.color);
 	let pageTitle = $derived(general.mapName + (title ? ` | ${title}` : ""));
 	let effectiveDescription = $derived(description ?? general.description);
 	let effectiveImage = $derived(image ?? general.image);
-
-	onDestroy(() => console.log("metadata destroy"))
 </script>
 
 <svelte:head>

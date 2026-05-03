@@ -47,7 +47,6 @@
 		showUltra,
 		League
 	} from "@/lib/utils/pokemonUtils";
-	import Metadata from "@/components/utils/Metadata.svelte";
 	import {
 		getPokemonStats as getMasterPokemonStats,
 		type PokemonStats
@@ -60,11 +59,13 @@
 	import { isPopupExpanded } from "@/lib/ui/expandedPopups";
 	import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 	import CompactPvpEntry from "./CompactPvpEntry.svelte";
+	import { useMetadata } from "@/lib/ui/metadata.svelte";
 
 	let data: PokemonData = $derived(
 		(getMapObjects()[getCurrentSelectedMapId()] as PokemonData) ??
 			(getCurrentSelectedData() as PokemonData)
 	);
+	useMetadata(() => ({ title: data ? mPokemon(data) : undefined }));
 
 	// let masterPokemon: MasterPokemon | undefined = $derived(getMasterPokemon(data.pokemon_id))
 
@@ -89,8 +90,6 @@
 	let maxGreatRank = $derived(getMaxPvpRank("pvpRankGreat", getUserSettings().filters.pokemon));
 	let maxUltraRank = $derived(getMaxPvpRank("pvpRankUltra", getUserSettings().filters.pokemon));
 </script>
-
-<Metadata title={data ? mPokemon(data) : undefined} />
 
 {#snippet timer()}
 	<IconValue Icon={hasTimer(data) ? Clock : ClockAlert}>

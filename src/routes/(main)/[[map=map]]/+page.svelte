@@ -10,7 +10,6 @@
 	import PopupContainer from "@/components/ui/popups/PopupContainer.svelte";
 	import DesktopMenu from "@/components/menus/DesktopMenu.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
-	import Metadata from "@/components/utils/Metadata.svelte";
 	import { isMenuSidebar } from "@/lib/utils/device";
 	import Home from "@/components/custom/Home.svelte";
 	import { isWebglSupported } from "@/lib/map/utils";
@@ -47,8 +46,6 @@
 
 	const errorHref = getConfig().general.customHome ? "/" : "";
 </script>
-
-<Metadata />
 
 {#if !isOnMap()}
 	<Home />
