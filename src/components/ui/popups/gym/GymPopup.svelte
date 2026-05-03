@@ -36,7 +36,7 @@
 	let rsvps: Rsvp[] = $derived(JSON.parse(data.rsvps ?? "[]"));
 </script>
 
-<Metadata title={data.name ?? m.pogo_gym()} />
+<Metadata title={data ? data.name ?? m.pogo_gym() : undefined} />
 
 {#snippet raidDisplay(expanded: boolean)}
 	{#if shouldDisplayRaid(data)}

@@ -47,7 +47,7 @@
 	);
 </script>
 
-<Metadata title={data.name ?? m.pogo_pokestop()} />
+<Metadata title={data ? data.name ?? m.pogo_pokestop() : undefined} />
 
 {#snippet lureSection()}
 	{#if shouldDisplayLure(data)}

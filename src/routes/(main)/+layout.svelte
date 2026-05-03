@@ -13,8 +13,6 @@
 	onMount(() => load().then());
 </script>
 
-<Metadata />
-
 {#if getIsToastOpen()}
 	<Toast />
 {/if}

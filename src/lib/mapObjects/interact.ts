@@ -23,9 +23,6 @@ export function closePopup() {
 
 	// call this to remove selected data (if needed)
 	updateAllMapObjects(true, true).then();
-
-	const title = document.head.querySelector("title");
-	if (title) title.innerText = getConfig().general.mapName;
 }
 
 export function openPopup(data: MapData, isOverwrite: boolean = false) {

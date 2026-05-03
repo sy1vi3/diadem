@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getConfig } from "@/lib/services/config/config";
+	import { onDestroy, onMount } from "svelte";
 
 	let {
 		title,
@@ -22,6 +23,8 @@
 	let pageTitle = $derived(general.mapName + (title ? ` | ${title}` : ""));
 	let effectiveDescription = $derived(description ?? general.description);
 	let effectiveImage = $derived(image ?? general.image);
+
+	onDestroy(() => console.log("metadata destroy"))
 </script>
 
 <svelte:head>

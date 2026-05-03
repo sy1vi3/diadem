@@ -90,7 +90,7 @@
 	let maxUltraRank = $derived(getMaxPvpRank("pvpRankUltra", getUserSettings().filters.pokemon));
 </script>
 
-<Metadata title={mPokemon(data)} />
+<Metadata title={data ? mPokemon(data) : undefined} />
 
 {#snippet timer()}
 	<IconValue Icon={hasTimer(data) ? Clock : ClockAlert}>
