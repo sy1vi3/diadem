@@ -134,7 +134,7 @@ export function calculateCp(
 	const defense = stats.baseDef + iv[1];
 	const stamina = stats.baseSta + iv[2];
 
-	return Math.floor(
+	return Math.max(10, Math.floor(
 		(attack * Math.sqrt(defense) * Math.sqrt(stamina) * Math.pow(multiplier, 2)) / 10
-	);
+	));
 }

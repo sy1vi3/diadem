@@ -509,5 +509,8 @@
 	"popup_action_show_on_every_tappable": "Auf allen Bodenitems zeigen",
 	"popup_action_show_timer": "Timer zeigen",
 	"popup_action_hide_timer": "Timer verstecken",
-	"close": "Schließen"
+	"close": "Schließen",
+	"language_polish": "Polnisch",
+	"pogo_hp": "{hp} KP",
+	"cpm": "CPM"
 }

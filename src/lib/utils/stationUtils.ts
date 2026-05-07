@@ -7,6 +7,7 @@ import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import type { FilterNest, FilterStation } from "@/lib/features/filters/filters";
 import { defaultFilter, getUserSettings } from "@/lib/services/userSettings.svelte";
 import { currentTimestamp } from "@/lib/utils/currentTimestamp";
+import { getMasterPokemon } from "@/lib/services/masterfile";
 
 export const STATION_SLOTS = 40;
 
@@ -52,4 +53,22 @@ export function getActiveStationFilter() {
 		return activeSearch.filter as FilterStation;
 	}
 	return getUserSettings().filters.station;
+}
+
+export function calculateMaxBattleCp(station: StationData) {
+	if (!station.battle_pokemon_id || !station.battle_pokemon_stamina || !station.battle_pokemon_cp_multiplier) return
+
+	const pokemon = getMasterPokemon(station.battle_pokemon_id, station.battle_pokemon_form)
+
+	if (!pokemon) return
+
+	const attack = pokemon.baseAtk + 15
+	const defense = pokemon.baseDef + 15
+	const stamina = station.battle_pokemon_stamina
+	const cpMultiplier = station.battle_pokemon_cp_multiplier
+
+	const cp = Math.floor(
+		(attack * cpMultiplier * Math.sqrt(defense * cpMultiplier * stamina)) / 10
+	);
+	return cp < 10 ? 10 : cp;
 }

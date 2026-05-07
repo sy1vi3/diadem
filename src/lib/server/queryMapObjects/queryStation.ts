@@ -31,7 +31,9 @@ export class StationQuery extends DbMapObjectQuery<StationData, FilterStation> {
 		"updated",
 		"total_stationed_pokemon",
 		"total_stationed_gmax",
-		"stationed_pokemon"
+		"stationed_pokemon",
+		"battle_pokemon_stamina",
+		"battle_pokemon_cp_multiplier",
 	];
 	protected readonly limit = requestLimits[MapObjectType.STATION];
 	protected readonly idColumn = "station.id";
