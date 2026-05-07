@@ -28,7 +28,7 @@
 		children?: Snippet;
 		tag?: "a" | "button";
 	} & HTMLButtonAttributes &
-		HTMLAnchorAttributes
+		HTMLAnchorAttributes;
 </script>
 
 <script lang="ts">

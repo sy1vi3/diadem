@@ -98,23 +98,24 @@
 		return Boolean(matchInvasionFilterset(incident)?.modifiers?.showLabel);
 	}
 
-	function getTimerOffset(
-		obj: MapData,
-		hasModifierLabel: boolean,
-	): [number, number] {
+	function getTimerOffset(obj: MapData, hasModifierLabel: boolean): [number, number] {
 		const iconSets = getCurrentUiconSetDetailsAllTypes();
 		const baseModifiers = getConfigModifiers(iconSets[obj.type], obj.type);
 		const offsetX = baseModifiers.offsetX;
 		const offsetY = baseModifiers.offsetY;
 
-		return [offsetX / MAPLIBRE_ICON_OFFSET_SCALE, (hasModifierLabel ? TIMER_TEXT_OFFSET.withLabel : TIMER_TEXT_OFFSET.default) + offsetY / MAPLIBRE_ICON_OFFSET_SCALE];
+		return [
+			offsetX / MAPLIBRE_ICON_OFFSET_SCALE,
+			(hasModifierLabel ? TIMER_TEXT_OFFSET.withLabel : TIMER_TEXT_OFFSET.default) +
+				offsetY / MAPLIBRE_ICON_OFFSET_SCALE
+		];
 	}
 
 	function createTimerFeatureEntry(
 		obj: MapData,
 		expires: number,
 		hasModifierLabel: boolean,
-		id: string,
+		id: string
 	): TimerFeatureEntry {
 		return {
 			expires,
@@ -143,7 +144,7 @@
 					obj,
 					incident.expiration,
 					hasIncidentFilterLabel(incident),
-					`${obj.mapId}-incident-${incident.id}`,
+					`${obj.mapId}-incident-${incident.id}`
 				)
 			);
 		}

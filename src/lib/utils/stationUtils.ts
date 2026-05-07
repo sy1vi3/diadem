@@ -56,19 +56,22 @@ export function getActiveStationFilter() {
 }
 
 export function calculateMaxBattleCp(station: StationData) {
-	if (!station.battle_pokemon_id || !station.battle_pokemon_stamina || !station.battle_pokemon_cp_multiplier) return
+	if (
+		!station.battle_pokemon_id ||
+		!station.battle_pokemon_stamina ||
+		!station.battle_pokemon_cp_multiplier
+	)
+		return;
 
-	const pokemon = getMasterPokemon(station.battle_pokemon_id, station.battle_pokemon_form)
+	const pokemon = getMasterPokemon(station.battle_pokemon_id, station.battle_pokemon_form);
 
-	if (!pokemon) return
+	if (!pokemon) return;
 
-	const attack = pokemon.baseAtk + 15
-	const defense = pokemon.baseDef + 15
-	const stamina = station.battle_pokemon_stamina
-	const cpMultiplier = station.battle_pokemon_cp_multiplier
+	const attack = pokemon.baseAtk + 15;
+	const defense = pokemon.baseDef + 15;
+	const stamina = station.battle_pokemon_stamina;
+	const cpMultiplier = station.battle_pokemon_cp_multiplier;
 
-	const cp = Math.floor(
-		(attack * cpMultiplier * Math.sqrt(defense * cpMultiplier * stamina)) / 10
-	);
+	const cp = Math.floor((attack * cpMultiplier * Math.sqrt(defense * cpMultiplier * stamina)) / 10);
 	return cp < 10 ? 10 : cp;
 }

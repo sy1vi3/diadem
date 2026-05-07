@@ -11,7 +11,7 @@ export async function GET({ params }) {
 
 	const result = await lookupGeometry(params.id);
 
-	if (!result) error(500)
+	if (!result) error(500);
 
 	log.info("Succcessfully geometry for osm id " + params.id);
 

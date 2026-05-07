@@ -11,7 +11,7 @@ export type AddressData = {
 	center: number[];
 	id: string;
 	bbox?: BBox;
-	geometry?: Geometry
+	geometry?: Geometry;
 };
 
 let abortController: AbortController | undefined = undefined;

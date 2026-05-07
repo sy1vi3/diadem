@@ -46,7 +46,7 @@ export function setIsLocateFollowing(state: boolean) {
 }
 
 export function resetLocate() {
-	getMap()?.stop()
+	getMap()?.stop();
 	isLocateFollowing = false;
 	shouldUpdateLocation = false;
 	shouldUpdateCamera = false;
@@ -77,7 +77,7 @@ function animateLocation(location: Location, map: maplibre.Map | undefined) {
 	if (isLocateFollowing && map && shouldUpdateCamera) {
 		// map.once("dragstart", () => map.stop())
 		map.panTo([location.lng, location.lat], {
-			duration: locationAnimationDuration,
+			duration: locationAnimationDuration
 		});
 	}
 
@@ -123,13 +123,16 @@ function flyToLocation(map: maplibre.Map, location: Location) {
 		if (e.data === "locate") {
 			shouldUpdateCamera = true;
 		}
-	})
-	map.flyTo({
-		center: [location.lng, location.lat],
-		zoom,
-		speed: 1.6,
-		curve: 1
-	}, { data: "locate" });
+	});
+	map.flyTo(
+		{
+			center: [location.lng, location.lat],
+			zoom,
+			speed: 1.6,
+			curve: 1
+		},
+		{ data: "locate" }
+	);
 }
 
 export async function updateGeolocationEnabled(showResult: boolean = false) {
@@ -159,7 +162,7 @@ export async function updateGeolocationEnabled(showResult: boolean = false) {
 }
 
 function handleGeolocationPosition(s: GeolocationPosition, map: maplibre.Map | undefined) {
-	if (!shouldUpdateLocation) return
+	if (!shouldUpdateLocation) return;
 
 	const hadLocation = !!currentLocation;
 	let heading = currentLocation?.heading;

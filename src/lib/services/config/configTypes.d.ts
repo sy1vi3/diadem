@@ -156,7 +156,7 @@ export type ServerConfig = {
 	nominatim?: {
 		url: string;
 		basicAuth?: string;
-		userAgent?: string
+		userAgent?: string;
 	};
 	pelias?: {
 		url: string;

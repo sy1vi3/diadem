@@ -78,7 +78,7 @@ export type AddressSearchEntry = SearchEntry & {
 	type: SearchableType.ADDRESS;
 	point: [number, number];
 	bbox: undefined | BBox;
-	geometry: undefined | Geometry
+	geometry: undefined | Geometry;
 };
 
 export type PokestopSearchEntry = SearchEntry & {
@@ -221,7 +221,7 @@ export function setSearchedLocation(location: Coords) {
 
 export function resetSearchedLocation() {
 	searchedLocation = undefined;
-	searchedGeomtry = undefined
+	searchedGeomtry = undefined;
 }
 
 export function getSearchedLocation() {
@@ -539,17 +539,16 @@ export async function backgroundGeometryLookup(osmId: string, coords: Coords) {
 		const result = await fetch("/api/search/geometry/" + osmId);
 		if (!result.ok) {
 			setSearchedLocation(coords);
-			return
+			return;
 		}
-		const geometry = await result.json() as Geometry;
+		const geometry = (await result.json()) as Geometry;
 		if (geometry.type) {
 			if (geometry.type === "Point") {
-				setSearchedLocation(coords)
+				setSearchedLocation(coords);
 			} else {
 				setSearchedGeometry(geometry);
 				return;
 			}
-
 		}
 	} catch (e) {}
 

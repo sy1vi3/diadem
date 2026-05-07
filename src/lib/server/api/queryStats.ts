@@ -471,7 +471,8 @@ export async function queryMasterStats(): Promise<MasterStats> {
 		const focusKey = JSON.stringify(focus);
 		const existingContest = activeContests.find(
 			(contest) =>
-				contest.ranking_standard === row.ranking_standard && JSON.stringify(contest.focus) === focusKey
+				contest.ranking_standard === row.ranking_standard &&
+				JSON.stringify(contest.focus) === focusKey
 		);
 
 		if (existingContest) {

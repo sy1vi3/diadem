@@ -15,24 +15,17 @@
 		actions = [],
 		...rest
 	}: {
-		Icon: LucideIcon,
-		label: string,
-		active?: boolean
-		IconActive?: LucideIcon
-		labelActive?: string
-		actions?: PopupActionDropdown[]
+		Icon: LucideIcon;
+		label: string;
+		active?: boolean;
+		IconActive?: LucideIcon;
+		labelActive?: string;
+		actions?: PopupActionDropdown[];
 	} & ButtonProps = $props();
 </script>
 
-<div
-	class="flex gap-0.5 [&>*:first-child:not(:last-child)]:rounded-r-none"
-	role="group">
-	<Button
-		size="default"
-		variant="secondary"
-		class="items-center"
-		{...rest}
-	>
+<div class="flex gap-0.5 [&>*:first-child:not(:last-child)]:rounded-r-none" role="group">
+	<Button size="default" variant="secondary" class="items-center" {...rest}>
 		{#if !active}
 			<Icon class="size-4 mb-0.5" />
 			{label}
@@ -46,12 +39,7 @@
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button
-						class="px-3! rounded-l-none"
-						size="default"
-						variant="secondary"
-						{...props}
-					>
+					<Button class="px-3! rounded-l-none" size="default" variant="secondary" {...props}>
 						<Ellipsis class="size-4 mt-0.5" />
 					</Button>
 				{/snippet}
@@ -90,7 +78,6 @@
 						</div>
 					{/if}
 				{/snippet}
-
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	{/if}

@@ -39,8 +39,8 @@ export async function initIconSet(id: string, url: string, thisFetch: typeof fet
 		const indexFile = JSON.parse(raw);
 		newSet.init(indexFile);
 	} catch (e) {
-		console.error(raw)
-		console.error("Error while parsing uicon index " + id, e)
+		console.error(raw);
+		console.error("Error while parsing uicon index " + id, e);
 	}
 }
 

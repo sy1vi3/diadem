@@ -49,11 +49,11 @@
 {/if}
 
 <style>
-    :global(.coveragemap-drawer-full) {
-        overflow-y: auto;
-    }
+	:global(.coveragemap-drawer-full) {
+		overflow-y: auto;
+	}
 
-    :global(.coveragemap-drawer-partial) {
-        overflow-y: hidden;
-    }
+	:global(.coveragemap-drawer-partial) {
+		overflow-y: hidden;
+	}
 </style>

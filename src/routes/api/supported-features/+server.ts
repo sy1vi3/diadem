@@ -14,6 +14,8 @@ export async function GET({ locals }) {
 		auth: !!config.auth?.enabled,
 		authRequired: isAuthRequired(),
 		showFullscreenLogin: isAuthRequired() && !locals.user,
-		geometryLookup: Boolean(config.nominatim?.url) && (!Boolean(config.pelias?.url) || Boolean(config.photon?.url)), // supported if nomatim is set and pelias is not the provider
+		geometryLookup:
+			Boolean(config.nominatim?.url) &&
+			(!Boolean(config.pelias?.url) || Boolean(config.photon?.url)) // supported if nomatim is set and pelias is not the provider
 	} as SupportedFeatures);
 }

@@ -5,19 +5,20 @@
 	import type { Feature } from "geojson";
 
 	let features: Feature[] = $derived.by(() => {
-		const geometry = getSearchedGeomtry()
-		if (!geometry) return []
+		const geometry = getSearchedGeomtry();
+		if (!geometry) return [];
 
-		return [{
-			type: "Feature",
-			geometry,
-			properties: {
-				fillColor: "rgba(255, 32, 86, 0.2)",
-				strokeColor: "rgba(255, 32, 86, 0.3)",
+		return [
+			{
+				type: "Feature",
+				geometry,
+				properties: {
+					fillColor: "rgba(255, 32, 86, 0.2)",
+					strokeColor: "rgba(255, 32, 86, 0.3)"
+				}
 			}
-		}]
-	})
-
+		];
+	});
 </script>
 
 <GeometryLayer

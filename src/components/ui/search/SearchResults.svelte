@@ -2,7 +2,8 @@
 	import type { FuzzyResult } from "@nozbe/microfuzz";
 	import {
 		type AnySearchEntry,
-		SearchableType, setSearchedGeometry,
+		SearchableType,
+		setSearchedGeometry,
 		setSearchedLocation
 	} from "@/lib/services/search.svelte";
 	import {
@@ -62,7 +63,7 @@
 			onselect={() => {
 				const params = getFeatureJump(entry.feature);
 				jumpTo(params.coords, params.zoom);
-				setSearchedGeometry(entry.feature.geometry)
+				setSearchedGeometry(entry.feature.geometry);
 				closeSearchModal();
 			}}
 		/>
@@ -74,9 +75,9 @@
 				jumpTo(params.coords, params.zoom);
 
 				if (entry.geometry) {
-					setSearchedGeometry(entry.geometry)
+					setSearchedGeometry(entry.geometry);
 				} else if (isSupportedFeature("geometryLookup")) {
-					backgroundGeometryLookup(entry.key, params.coords).then()
+					backgroundGeometryLookup(entry.key, params.coords).then();
 				} else {
 					setSearchedLocation(params.coords);
 				}

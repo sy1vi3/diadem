@@ -10,7 +10,12 @@
 	import CloseButton from "@/components/ui/CloseButton.svelte";
 	import { closePopup, getCurrentPath } from "@/lib/mapObjects/interact";
 	import { getCurrentSelectedData } from "@/lib/mapObjects/currentSelectedState.svelte";
-	import { backupShareUrl, canNativeShare, copyToClipboard, hasClipboardWrite } from "@/lib/utils/device";
+	import {
+		backupShareUrl,
+		canNativeShare,
+		copyToClipboard,
+		hasClipboardWrite
+	} from "@/lib/utils/device";
 	import { getLocale } from "@/lib/paraglide/runtime";
 	import * as m from "@/lib/paraglide/messages";
 
@@ -38,7 +43,6 @@
 </script>
 
 <Card class="h-full relative overflow-hidden pt-4 mx-2">
-
 	<div class="absolute right-2 top-3 flex gap-1.5">
 		{#if canNativeShare({ url: getShareUrl() })}
 			<Button
@@ -61,7 +65,13 @@
 				<Copy class="size-3.5" />
 			</Button>
 		{/if}
-		<Button variant="ghost" size="" class="rounded-full p-2 size-8" title={m.close()} onclick={closePopup}>
+		<Button
+			variant="ghost"
+			size=""
+			class="rounded-full p-2 size-8"
+			title={m.close()}
+			onclick={closePopup}
+		>
 			<X class="size-4.5" />
 		</Button>
 	</div>

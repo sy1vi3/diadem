@@ -15,7 +15,7 @@ type NominatimProps = {
 		street?: string;
 		housenumber?: string;
 		osm_id: number;
-		osm_type: string
+		osm_type: string;
 	};
 };
 
@@ -62,7 +62,7 @@ export async function searchAddress(
 
 export async function lookupGeometry(osmId: string) {
 	if (getServerConfig().nominatim?.url) {
-		return await nominatimLookupGeometry(osmId)
+		return await nominatimLookupGeometry(osmId);
 	}
 
 	return undefined;
@@ -246,7 +246,7 @@ async function nominatimRequest(url: string) {
 		return;
 	}
 
-	return response
+	return response;
 }
 
 async function nominatimSearchAddress(query: string, language: string): Promise<AddressData[]> {
@@ -265,8 +265,8 @@ async function nominatimSearchAddress(query: string, language: string): Promise<
 		"&q=" +
 		query;
 
-	const response = await nominatimRequest(nomiUrl)
-	if (!response) return []
+	const response = await nominatimRequest(nomiUrl);
+	if (!response) return [];
 
 	const data: FeatureCollection<Point, NominatimProps> = await response.json();
 
@@ -295,11 +295,11 @@ async function nominatimSearchAddress(query: string, language: string): Promise<
 				name,
 				id: `${props.osm_type[0]}${props.osm_id}`,
 				center: f.geometry.coordinates,
-				bbox: f.bbox,
+				bbox: f.bbox
 			};
 
 			if (f.geometry.type !== "Point") {
-				data.geometry = f.geometry
+				data.geometry = f.geometry;
 			}
 
 			return data;
@@ -311,11 +311,11 @@ async function nominatimLookupGeometry(osmId: string): Promise<Geometry | undefi
 	const config = getServerConfig().nominatim;
 	if (!config || !config.url) return;
 
-	const url = config.url + "lookup?format=geojson&polygon_geojson=1&osm_ids=" + osmId
-	const response = await nominatimRequest(url)
-	if (!response) return
+	const url = config.url + "lookup?format=geojson&polygon_geojson=1&osm_ids=" + osmId;
+	const response = await nominatimRequest(url);
+	if (!response) return;
 
-	const featureCollection = await response.json() as FeatureCollection
+	const featureCollection = (await response.json()) as FeatureCollection;
 
-	return featureCollection.features[0]?.geometry
+	return featureCollection.features[0]?.geometry;
 }
