@@ -2,6 +2,7 @@ import { goto } from "$app/navigation";
 import { getKojiGeofences, type KojiFeature } from "@/lib/features/koji";
 import { CoverageMapLayerId } from "@/lib/map/layers";
 import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte";
+import { Menu, openMenu, setJustChangedMenus } from "@/lib/ui/menus.svelte";
 import { featureCollection } from "@turf/turf";
 import type { Feature, FeatureCollection, Polygon } from "geojson";
 import maplibre from "maplibre-gl";
@@ -38,6 +39,7 @@ export function coverageMapClickHandler(event: maplibre.MapMouseEvent) {
 
 export function openCoverageMap() {
 	invokedFromMap = true;
+	setJustChangedMenus();
 	goto("/coverage").then();
 }
 
