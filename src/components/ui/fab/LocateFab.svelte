@@ -12,15 +12,17 @@
 	import type maplibre from "maplibre-gl";
 
 	let {
-		map
+		map,
+		allowFollow = false
 	}: {
 		map: maplibre.Map | undefined;
+		allowFollow?: boolean;
 	} = $props();
 
 	onMount(() => updateGeolocationEnabled().then());
 </script>
 
-<BaseFab onclick={() => updateLocation(map)}>
+<BaseFab onclick={() => updateLocation(map, allowFollow)}>
 	{#if getIsGeolocationEnabled()}
 		{#if getIsLocateFollowing()}
 			<LocateFixed size="24" />

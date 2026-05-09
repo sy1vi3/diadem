@@ -88,7 +88,7 @@
 		{/snippet}
 		{#snippet desktopRight()}
 			{#if !isSearchViewActive()}
-				<Fabs {map} />
+				<Fabs {map} allowFollow={true} />
 			{/if}
 			<PopupContainer />
 		{/snippet}
@@ -96,7 +96,7 @@
 		{#snippet mobileBottom()}
 			{#if !getOpenedMenu()}
 				{#if !isSearchViewActive()}
-					<Fabs {map} />
+					<Fabs {map} allowFollow={true} />
 				{/if}
 				<PopupContainer />
 			{/if}

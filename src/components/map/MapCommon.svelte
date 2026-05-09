@@ -12,6 +12,7 @@
 	import { closeMenu } from "@/lib/ui/menus.svelte";
 	import { clearActiveSearchFilter } from "@/lib/features/activeSearch.svelte.js";
 	import { setCurrentSelectedData } from "@/lib/mapObjects/currentSelectedState.svelte";
+	import { resetLocate } from "@/lib/map/geolocate.svelte";
 
 	let {
 		onload = undefined,
@@ -41,6 +42,7 @@
 		closeMenu();
 		clearActiveSearchFilter();
 		setCurrentSelectedData(null);
+		resetLocate()
 	});
 </script>
 

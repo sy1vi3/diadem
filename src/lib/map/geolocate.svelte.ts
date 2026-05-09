@@ -135,6 +135,19 @@ function flyToLocation(map: maplibre.Map, location: Location) {
 	);
 }
 
+function handleGeolocationError(e: GeolocationPositionError) {
+	if (e.code === 1) {
+		openToast(m.locate_error_perms());
+	} else if (e.code === 2 || e.code === 3) {
+		openToast(m.locate_error_timeout());
+	} else {
+		openToast(m.locate_error_unknown());
+	}
+
+	geolocationEnabled = false;
+	currentLocation = undefined;
+}
+
 export async function updateGeolocationEnabled(showResult: boolean = false) {
 	let errorReason = "";
 	let geolocationOk: boolean = false;
@@ -218,14 +231,15 @@ function handleGeolocationPosition(s: GeolocationPosition, map: maplibre.Map | u
 	}
 }
 
-export function updateLocation(map: maplibre.Map | undefined) {
-	if (watchId !== undefined) {
+export function updateLocation(map: maplibre.Map | undefined, allowFollow: boolean) {
+	if (allowFollow && watchId !== undefined) {
 		if (isLocateFollowing) {
 			resetLocate();
 			return;
 		}
 
 		isLocateFollowing = true;
+
 		if (currentLocation && map) {
 			flyToLocation(map, currentLocation);
 		}
@@ -239,27 +253,39 @@ export function updateLocation(map: maplibre.Map | undefined) {
 	}
 
 	isFetchingLocation = true;
-	isLocateFollowing = true;
 	shouldUpdateLocation = true;
-	watchId = navigator.geolocation.watchPosition(
-		(s) => handleGeolocationPosition(s, map),
-		(e) => {
-			if (e.code === 1) {
-				openToast(m.locate_error_perms());
-			} else if (e.code === 2 || e.code === 3) {
-				openToast(m.locate_error_timeout());
-			} else {
-				openToast(m.locate_error_unknown());
-			}
 
-			geolocationEnabled = false;
-			currentLocation = undefined;
-			resetLocate();
-		},
-		{
-			enableHighAccuracy: true,
-			maximumAge: 1000,
-			timeout: 10000
-		}
-	);
+	if (allowFollow) {
+		isLocateFollowing = true;
+		watchId = navigator.geolocation.watchPosition(
+			(s) => handleGeolocationPosition(s, map),
+			(e) => {
+				handleGeolocationError(e);
+				resetLocate();
+			},
+			{
+				enableHighAccuracy: true,
+				maximumAge: 1000,
+				timeout: 10000
+			}
+		);
+	} else {
+		navigator.geolocation.getCurrentPosition(
+			(s) => {
+				handleGeolocationPosition(s, map);
+				if (map) flyToLocation(map, currentLocation);
+				shouldUpdateLocation = watchId !== undefined;
+			},
+			(e) => {
+				handleGeolocationError(e);
+				isFetchingLocation = false;
+				shouldUpdateLocation = watchId !== undefined;
+			},
+			{
+				enableHighAccuracy: true,
+				maximumAge: 1000,
+				timeout: 10000
+			}
+		);
+	}
 }
