@@ -16,8 +16,8 @@ export type AddressData = {
 let abortController: AbortController | undefined = undefined;
 let debounceTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
-export async function searchAddress(query: string) {
-	if (query.length <= 2) return;
+export async function searchAddress(query: string, ignoreMinCharacters: boolean) {
+	if (ignoreMinCharacters && query.length <= 2) return;
 
 	setIsSearchingAddress(true);
 

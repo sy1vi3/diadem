@@ -180,6 +180,7 @@ export type SearchOptions = {
 	types?: SearchableType[];
 	showRecents?: boolean;
 	resultSnippet: Snippet<[FuzzyResult<AnySearchEntry>[]]>;
+	ignoreAddressMinCharacters?: boolean
 };
 
 let currentSearchQuery = $state("");
@@ -506,7 +507,7 @@ export function initSearch(searchOptions: SearchOptions) {
 
 export function search(query: string, limit: boolean, searchOptions: SearchOptions) {
 	if (shouldSearchType(SearchableType.ADDRESS, searchOptions) && isSupportedFeature("geocoding")) {
-		searchAddress(query).then();
+		searchAddress(query, searchOptions?.ignoreAddressMinCharacters ?? false).then();
 	}
 
 	let results = fuzzy(query);
