@@ -101,7 +101,7 @@ abstract class MapObjectRenderer<MapObject extends MapData> {
 			selectedScale,
 			imageOffset: [this.iconModifiers.offsetX, this.iconModifiers.offsetY],
 			expires: options?.expires ?? null,
-			normalize: options?.normalize
+			...(options?.normalize ? { normalize: true } : {})
 		} as MapObjectIconProperties;
 	}
 
