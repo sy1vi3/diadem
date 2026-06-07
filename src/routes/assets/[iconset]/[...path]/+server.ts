@@ -12,6 +12,7 @@ export async function GET({ params, fetch, url }) {
 	const config = getClientConfig();
 
 	const width = url.searchParams.get("w");
+	const trim = url.searchParams.get("trim") === "1";
 	const formatParam = url.searchParams.get("format");
 	const iconSetId = params.iconset;
 	const iconPath = params.path;
@@ -40,6 +41,10 @@ export async function GET({ params, fetch, url }) {
 		const fetchDone = performance.now();
 
 		let sharpImage = sharp(Buffer.from(await res.arrayBuffer()));
+		if (trim) {
+			// Crop away the fully-transparent border so the icon's actual content fills the frame.
+			sharpImage = sharpImage.ensureAlpha().trim({ threshold: 10 });
+		}
 		if (width) {
 			sharpImage = sharpImage.resize({
 				width: Number(width),

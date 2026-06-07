@@ -1,15 +1,15 @@
-export const ALLOWED_WIDTHS = ["64"];
+export const ALLOWED_WIDTHS = ["64", "128"];
 export const ALLOWED_FORMATS: ("webp" | "png")[] = ["webp", "png"];
 
 type ResizeOptions = {
 	width?: number;
+	trim?: boolean;
 };
 
 export function resize(url: string, options?: ResizeOptions) {
-	url += "?";
-	const params = [];
-	if (options && options.width) params.push(`w=${options.width}`);
+	const params: string[] = [];
+	if (options?.width) params.push(`w=${options.width}`);
+	if (options?.trim) params.push("trim=1");
 
-	url += params.join("&");
-	return url;
+	return params.length ? `${url}?${params.join("&")}` : url;
 }
