@@ -30,7 +30,7 @@
 </script>
 
 {#if getUserSettings().showDebugMenu}
-	<Card class="font-mono fixed top-24 right-2 z-10 py-2 px-4 text-xs">
+	<Card class="font-mono pointer-events-auto mx-2 py-2 px-4 text-xs">
 		{#key rerender}
 			<div>
 				Zoom: {getMap()?.getZoom()?.toFixed(2)}

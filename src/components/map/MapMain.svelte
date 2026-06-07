@@ -23,7 +23,6 @@
 	import maplibre from "maplibre-gl";
 	import GeometryLayer from "@/components/map/GeometryLayer.svelte";
 	import WeatherLayer from "@/components/map/WeatherLayer.svelte";
-	import DebugMenu from "@/components/map/DebugMenu.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
 	import { openToast } from "@/lib/ui/toasts.svelte.js";
 	import MarkerCurrentLocation from "@/components/map/MarkerCurrentLocation.svelte";
@@ -151,8 +150,6 @@
 </script>
 
 <svelte:window onfocus={onWindowFocus} onblur={clearUpdateMapObjectsInterval} />
-
-<DebugMenu />
 
 <MapCommon
 	bind:map

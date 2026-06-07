@@ -1,6 +1,7 @@
 <script lang="ts">
 	import WeatherOverview from "@/components/map/WeatherOverview.svelte";
 	import Fabs from "@/components/ui/fab/Fabs.svelte";
+	import DebugMenu from "@/components/map/DebugMenu.svelte";
 	import { isMenuSidebar, isUiLeft } from "@/lib/utils/device";
 	import { isSearchViewActive } from "@/lib/features/activeSearch.svelte";
 	import type maplibre from "maplibre-gl";
@@ -22,4 +23,6 @@
 	{#if !isSearchViewActive()}
 		<Fabs {map} allowFollow={true} />
 	{/if}
+
+	<DebugMenu />
 </div>
