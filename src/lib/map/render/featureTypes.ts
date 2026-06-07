@@ -95,7 +95,8 @@ export function getIconFeature(
 			...rest,
 			...(hasOffset ? { imageOffset } : {}),
 			imageUrl,
-			imageId: properties.imageId ?? properties.imageUrl,
+			imageId:
+				(properties.imageId ?? properties.imageUrl) + (properties.normalize ? "/normalized" : ""),
 			dimmed: properties.dimmed ?? false,
 			type: FeatureTypes.ICON
 		},
