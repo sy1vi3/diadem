@@ -64,3 +64,6 @@ networks:
   diadem-network:
     name: diadem-network
     driver: bridge
+    driver_opts:
+      # mariadb gets sad if the docker network mtu is larger than the host's
+      com.docker.network.driver.mtu: ${DOCKER_MTU:-1500}
