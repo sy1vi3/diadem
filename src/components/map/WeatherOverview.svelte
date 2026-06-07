@@ -2,7 +2,10 @@
 	import { mType, mWeather } from "@/lib/services/ingameLocale.js";
 	import {
 		getCurrentWeather,
-		updateCurrentWeatherFeatures,
+		getDisplayWeather,
+		isWeatherDisplayActive,
+		setWeatherDisplayActive,
+		updateVisibleWeatherCells,
 		updateWeather
 	} from "@/lib/mapObjects/weather.svelte.js";
 	import Button from "@/components/ui/input/Button.svelte";
@@ -17,65 +20,50 @@
 	import { getMasterWeather } from "@/lib/services/masterfile";
 	import ImagePopup from "@/components/ui/popups/common/ImagePopup.svelte";
 	import { getIconType } from "@/lib/services/uicons.svelte.js";
-	import { watch } from "runed";
-	import type { WeatherData } from "@/lib/types/mapObjectData/weather";
-	import { closeMenu, openMenu } from "@/lib/ui/menus.svelte.js";
+	import { closeMenu } from "@/lib/ui/menus.svelte.js";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
 	import { timestampToLocalTime } from "@/lib/utils/timestampToLocalTime";
 	import { currentTimestamp } from "@/lib/utils/currentTimestamp";
 	import { isSearchViewActive } from "@/lib/features/activeSearch.svelte";
 
-	let ignoreWatch = false;
-	let isClicked: boolean = $state(false);
+	let displayWeather = $derived(getDisplayWeather());
 	let boostedTypes: number[] = $derived(
-		getMasterWeather(getCurrentWeather()?.gameplay_condition)?.types ?? []
-	);
-
-	watch(
-		() => getCurrentWeather(),
-		() => {
-			if (ignoreWatch) return;
-			isClicked = false;
-			updateCurrentWeatherFeatures(false);
-		}
+		getMasterWeather(displayWeather?.gameplay_condition)?.types ?? []
 	);
 
 	async function onClick() {
-		isClicked = !isClicked;
+		const next = !isWeatherDisplayActive();
+		setWeatherDisplayActive(next);
 		closeMenu();
 
-		if (isClicked && getMap()?.isMoving()) {
-			ignoreWatch = true;
-			await updateWeather();
-			ignoreWatch = false;
-		}
+		if (next) {
+			if (getMap()?.isMoving()) await updateWeather();
 
-		const weather = getCurrentWeather();
+			const weather = getCurrentWeather();
+			if (weather && isWeatherUpdated(weather)) {
+				closePopup();
+				getMap()?.flyTo({
+					center: {
+						lng: weather.longitude,
+						lat: weather.latitude
+					},
+					zoom: 11.5,
+					bearing: 0,
+					pitch: 0,
+					speed: 3
+				});
+			}
 
-		if (isClicked && weather && isWeatherUpdated(weather)) {
-			closePopup();
-			getMap()?.flyTo({
-				center: {
-					lng: weather.longitude,
-					lat: weather.latitude
-				},
-				zoom: 11.5,
-				bearing: 0,
-				pitch: 0,
-				speed: 3
-			});
-			updateCurrentWeatherFeatures(true);
-		} else if (!isClicked) {
-			updateCurrentWeatherFeatures(false);
+			await updateVisibleWeatherCells();
 		}
 	}
 
-	function isWeatherUpdated(weather: WeatherData | undefined) {
+	function isWeatherUpdated(weather: { updated: number } | undefined) {
 		return (weather?.updated ?? 0) > currentTimestamp() - WEATHER_OUTDATED_SECONDS;
 	}
 </script>
 
-{#if getCurrentWeather() && isWeatherUpdated(getCurrentWeather()) && hasLoadedFeature(LoadedFeature.REMOTE_LOCALE, LoadedFeature.ICON_SETS) && !isSearchViewActive()}
+{#if displayWeather && isWeatherUpdated(displayWeather) && hasLoadedFeature(LoadedFeature.REMOTE_LOCALE, LoadedFeature.ICON_SETS) && !isSearchViewActive()}
 	<div class="pointer-events-none mx-2" transition:fade={{ duration: 90 }}>
 		<Button
 			variant="ghost"
@@ -84,12 +72,12 @@
 			onclick={onClick}
 		>
 			<div>
-				<IconValue Icon={getWeatherIcon(getCurrentWeather()?.gameplay_condition)}>
-					{mWeather(getCurrentWeather()?.gameplay_condition)}
+				<IconValue Icon={getWeatherIcon(displayWeather?.gameplay_condition)}>
+					{mWeather(displayWeather?.gameplay_condition)}
 				</IconValue>
 			</div>
 
-			{#if isClicked}
+			{#if isWeatherDisplayActive()}
 				<div class="mt-2" transition:slide={{ duration: 70 }}>
 					<IconValue Icon={ArrowBigUpDash}>
 						{m.boosted()}:
@@ -109,7 +97,7 @@
 					<div class="h-3"></div>
 
 					<IconValue Icon={Clock}>
-						{m.last_changed()}: <b>{timestampToLocalTime(getCurrentWeather()?.updated)}</b>
+						{m.last_changed()}: <b>{timestampToLocalTime(displayWeather?.updated)}</b>
 					</IconValue>
 				</div>
 			{/if}
