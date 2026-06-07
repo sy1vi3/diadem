@@ -361,3 +361,75 @@ Modifiers can be used to adjust sizing and positioning for icons on the map.
   - `scale` to modify the icon's size
   - `offsetX`/`offsetY` to modify the icon's position
   - `spacing` to control the space between icons, when they can be displayed as an array
+
+## `client.defaultFilters`
+
+Optional. Overrides the filter state new users start with, before they make any
+changes. By default only gyms and raids are shown. Anything you leave out keeps its
+built-in default, and saved user settings always take precedence over this section.
+
+You can override two things:
+
+- **Whether a layer (or sub-layer) is shown by default**, with `enabled`.
+- **The default filtersets** (preset filters) for a layer, with a `[[...filters]]`
+  array. Providing a `filters` array fully replaces the default (empty) list for
+  that layer; providing only scalar keys merges over the defaults.
+
+```toml
+# Show Pokemon by default, with a "Hundo" preset (red glow on 100% IV Pokemon)
+[client.defaultFilters.pokemon]
+enabled = true
+[[client.defaultFilters.pokemon.filters]]
+title = "Hundo"
+emoji = "💯"
+iv = { min = 100, max = 100 }
+modifiers = { glow = { color = "rgba(251, 44, 54, {})" } }
+
+# Hide gyms by default
+[client.defaultFilters.gym]
+enabled = false
+
+# Show only legendary raids by default
+[[client.defaultFilters.gym.raid.filters]]
+title = "Legendary"
+uicon = { category = "raid", params = { level = 5 } }
+levels = [5]
+
+# Turn on quests (a sub-layer of pokestops) by default
+[client.defaultFilters.pokestop]
+enabled = true
+[client.defaultFilters.pokestop.quest]
+enabled = true
+
+# Show S2 cells at level 17 by default
+[client.defaultFilters.s2cell]
+enabled = true
+level = 17
+wayfarerMode = false
+```
+
+Layers: `pokemon`, `pokestop`, `gym`, `station`, `s2cell`, `nest`, `spawnpoint`,
+`route`, `tappable`. Sub-layers include `pokestop.{pokestopPlain, quest, invasion,
+contest, kecleon, goldPokestop, lure}`, `gym.{gymPlain, raid}` and
+`station.{stationPlain, maxBattle}`.
+
+Filtersets use a minimal shape; these fields are filled in automatically:
+
+- `id` — generated if omitted
+- `enabled` — defaults to `true`
+- `title` — a plain string, shown as-is (or resolved as a translation key if it
+  matches one)
+- `icon` — set `emoji = "..."` or `uicon = { category = "...", params = { ... } }`
+
+All other keys (`iv`, `cp`, `levels`, `bosses`, `modifiers`, …) match the in-app
+filter fields. A filterset that fails validation is skipped (with a console
+warning) and the rest still load.
+
+> Glow and background `modifiers` colors must use the format `rgba(r, g, b, {})`.
+> The literal `{}` is an opacity placeholder the map substitutes per render — for a
+> glow it fades from this color at the center to transparent at the edge. A plain
+> hex value such as `#ff0000` has no placeholder, so every step stays fully opaque
+> and you get a solid circle instead of a soft glow.
+
+> In TOML, scalar keys like `enabled` must appear **before** any `[[...filters]]`
+> table for the same layer.
