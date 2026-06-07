@@ -10,7 +10,7 @@ import {
 } from "@/lib/mapObjects/mapObjectsState.svelte.js";
 import { allMapObjectTypes, type MapData, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import { getS2CellMapObjects } from "@/lib/mapObjects/s2cells.js";
-import { updateWeather } from "@/lib/mapObjects/weather.svelte";
+import { updateVisibleWeatherCells, updateWeather } from "@/lib/mapObjects/weather.svelte";
 import type { MapObjectResponse } from "@/lib/server/queryMapObjects/MapObjectQuery";
 import { hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
 import { getUserDetails } from "@/lib/services/user/userDetails.svelte";
@@ -177,7 +177,8 @@ export async function updateAllMapObjects(removeOld: boolean = true, onlyChanged
 			...allMapObjectTypes.map((type) =>
 				updateMapObject(type, removeOld, undefined, controller.signal, onlyChanged)
 			),
-			updateWeather()
+			updateWeather(),
+			updateVisibleWeatherCells()
 		]);
 	}
 

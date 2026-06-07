@@ -242,6 +242,7 @@ password = ""
 mapName = "Diadem"
 defaultLocale = "en"
 customHome = false
+filterCaretStyle = "caret"
 defaultLat = 51.516855
 defaultLon = -0.080500
 defaultZoom = 15
@@ -256,6 +257,7 @@ disallowedPaths = []
 
 - branding and defaults for map and metadata
 - `customHome`: When true, `/` renders custom home and map moves to `/map`
+- `filterCaretStyle`: Expand indicator for filter sections — `"caret"` (default, `^` collapsed / `v` expanded) or `"chevron"` (`>` collapsed / `v` expanded)
 - `defaultLat`, `defaultLon`, `defaultZoom`: The default map position for first-time users
 - `minZoom`, `maxZoom`: Locking users into a map zoom range
 - `url`, `image`, `description`: SEO/OpenGraph metadata

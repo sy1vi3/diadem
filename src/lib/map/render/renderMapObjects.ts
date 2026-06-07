@@ -92,7 +92,7 @@ abstract class MapObjectRenderer<MapObject extends MapData> {
 	protected getBasicProps(
 		data: MapObject,
 		selectedScale: number,
-		options?: { expires?: number | null; icon?: string }
+		options?: { expires?: number | null; icon?: string; normalize?: boolean }
 	) {
 		return {
 			imageUrl: options?.icon ?? getIconForMap(data),
@@ -100,7 +100,8 @@ abstract class MapObjectRenderer<MapObject extends MapData> {
 			imageSize: this.iconModifiers.scale,
 			selectedScale,
 			imageOffset: [this.iconModifiers.offsetX, this.iconModifiers.offsetY],
-			expires: options?.expires ?? null
+			expires: options?.expires ?? null,
+			...(options?.normalize ? { normalize: true } : {})
 		} as MapObjectIconProperties;
 	}
 
@@ -361,7 +362,8 @@ class GymRenderer extends MapObjectRenderer<GymData> {
 							this.iconModifiers.offsetY + raidModifiers.offsetY
 						],
 						id: data.mapId,
-						expires: data.raid_end_timestamp ?? null
+						expires: data.raid_end_timestamp ?? null,
+						normalize: true
 					})
 				);
 			} else {
@@ -404,7 +406,10 @@ class PokemonRenderer extends MapObjectRenderer<PokemonData> {
 			data,
 			data.id,
 			matchPokemonFilterset(data),
-			this.getBasicProps(data, selectedScale, { expires: data.expire_timestamp })
+			this.getBasicProps(data, selectedScale, {
+				expires: data.expire_timestamp,
+				normalize: true
+			})
 		);
 	}
 }
@@ -430,7 +435,8 @@ class StationRenderer extends MapObjectRenderer<StationData> {
 						this.iconModifiers.offsetY + maxBattleModifiers.offsetY
 					],
 					id: data.mapId,
-					expires: data.end_time ?? null
+					expires: data.end_time ?? null,
+					normalize: true
 				})
 			);
 		}
@@ -468,7 +474,8 @@ class NestRenderer extends MapObjectRenderer<NestData> {
 				imageSize: this.iconModifiers.scale,
 				selectedScale,
 				imageOffset: [this.iconModifiers.offsetX, this.iconModifiers.offsetY],
-				expires: null
+				expires: null,
+				normalize: true
 			}),
 			getCircleFeature(data.mapId, [data.lon, data.lat], {
 				id: data.mapId,

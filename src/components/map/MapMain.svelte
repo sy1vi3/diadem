@@ -22,7 +22,7 @@
 	} from "@/lib/map/events";
 	import maplibre from "maplibre-gl";
 	import GeometryLayer from "@/components/map/GeometryLayer.svelte";
-	import DebugMenu from "@/components/map/DebugMenu.svelte";
+	import WeatherLayer from "@/components/map/WeatherLayer.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
 	import { openToast } from "@/lib/ui/toasts.svelte.js";
 	import MarkerCurrentLocation from "@/components/map/MarkerCurrentLocation.svelte";
@@ -104,11 +104,18 @@
 					openMapObject(directLinkData as unknown as Parameters<typeof openMapObject>[0]);
 				} else if ("noPermission" in directLinkData && directLinkData.noPermission) {
 					openToast(
-						m.direct_link_no_permission({ type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]() }),
+						m.direct_link_no_permission({
+							type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]()
+						}),
 						5000
 					);
 				} else {
-					openToast(m.direct_link_not_found({ type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]() }), 5000);
+					openToast(
+						m.direct_link_not_found({
+							type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]()
+						}),
+						5000
+					);
 				}
 			}
 
@@ -144,15 +151,13 @@
 
 <svelte:window onfocus={onWindowFocus} onblur={clearUpdateMapObjectsInterval} />
 
-<DebugMenu />
-
 <MapCommon
 	bind:map
 	onload={onMapLoad}
 	initialCenter={Coords.infer(mapPosition.center)}
 	initialZoom={mapPosition.zoom}
 >
-	<GeometryLayer id={MapSourceId.SELECTED_WEATHER} reactive={false} />
+	<WeatherLayer />
 	<GeometryLayer
 		show={() => getOpenedMenu() === Menu.SCOUT}
 		id={MapSourceId.SCOUT_BIG_POINTS}

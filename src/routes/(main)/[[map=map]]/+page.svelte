@@ -3,10 +3,9 @@
 	import ContextMenu from "@/components/ui/contextmenu/ContextMenu.svelte";
 	import { getConfig } from "@/lib/services/config/config";
 	import { getCurrentSelectedData } from "@/lib/mapObjects/currentSelectedState.svelte.js";
-	import WeatherOverview from "@/components/map/WeatherOverview.svelte";
+	import TopControls from "@/components/map/TopControls.svelte";
 	import { isSupportedFeature } from "@/lib/services/supportedFeatures";
 	import { closeMenu, getOpenedMenu } from "@/lib/ui/menus.svelte.js";
-	import Fabs from "@/components/ui/fab/Fabs.svelte";
 	import PopupContainer from "@/components/ui/popups/PopupContainer.svelte";
 	import DesktopMenu from "@/components/menus/DesktopMenu.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
@@ -75,7 +74,7 @@
 		</div>
 	{/if}
 
-	<WeatherOverview />
+	<TopControls {map} />
 
 	<MapMenuUi>
 		{#snippet desktopLeft()}
@@ -87,17 +86,11 @@
 			{/if}
 		{/snippet}
 		{#snippet desktopRight()}
-			{#if !isSearchViewActive()}
-				<Fabs {map} allowFollow={true} />
-			{/if}
 			<PopupContainer />
 		{/snippet}
 
 		{#snippet mobileBottom()}
 			{#if !getOpenedMenu()}
-				{#if !isSearchViewActive()}
-					<Fabs {map} allowFollow={true} />
-				{/if}
 				<PopupContainer />
 			{/if}
 			{#if !isSearchViewActive()}

@@ -39,7 +39,7 @@
 	let selectedMapId = $derived(selectedData?.mapId);
 </script>
 
-<div class="flex px-4 gap-1.5 w-full overflow-x-auto pb-4">
+<div class="flex flex-wrap justify-center gap-1.5 border-t border-border mt-1 px-4 pt-3 pb-4">
 	<PopupButton
 		variant="default"
 		Icon={Plus}

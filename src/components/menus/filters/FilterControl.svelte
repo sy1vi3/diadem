@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronUp, Eye, EyeClosed, FunnelPlus } from "lucide-svelte";
+	import { ChevronUp, ChevronRight, Eye, EyeClosed, FunnelPlus } from "lucide-svelte";
 	import type { AnyFilter, FilterCategory } from "@/lib/features/filters/filters";
 	import type { AnyFilterset } from "@/lib/features/filters/filtersets";
 	import Switch from "@/components/ui/input/Switch.svelte";
@@ -27,6 +27,7 @@
 	import { mAny } from "@/lib/utils/anyMessage";
 	import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 	import S2CellFilters from "@/components/menus/filters/S2CellFilters.svelte";
+	import { getConfig } from "@/lib/services/config/config";
 
 	let {
 		majorCategory,
@@ -126,11 +127,19 @@
 						{title}
 					</p>
 					{#if isExpandable}
-						<ChevronUp
-							size="16"
-							class="transition-[rotate] mt-px"
-							style="rotate: {expanded ? '180deg' : '0deg'}"
-						/>
+						{#if getConfig().general.filterCaretStyle === "chevron"}
+							<ChevronRight
+								size="16"
+								class="transition-[rotate] mt-px"
+								style="rotate: {expanded ? '90deg' : '0deg'}"
+							/>
+						{:else}
+							<ChevronUp
+								size="16"
+								class="transition-[rotate] mt-px"
+								style="rotate: {expanded ? '180deg' : '0deg'}"
+							/>
+						{/if}
 					{/if}
 				</div>
 
