@@ -37,3 +37,6 @@ docker-compose.yml
 
 # LLM bullshit
 .claude
+
+# VSCode stuff
+.vscode

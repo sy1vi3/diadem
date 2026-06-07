@@ -47,3 +47,6 @@ coverage
 # LLM bullshit
 .claude
 CLAUDE.md
+
+# VSCode stuff
+.vscode
