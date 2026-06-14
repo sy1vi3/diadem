@@ -37,13 +37,14 @@ projectName = "reactmap"
 #userAgent = "Diadem / Contact: name@email.com"
 
 [server.auth]
-enabled = true
+enabled = false
 optional = true
+secret = ""   # set to a random 32+ character string
+baseUrl = "https://map.co"
 
 [server.auth.discord]
 clientId = ""
 clientSecret = ""
-redirectUri = "https://map.co/login/discord/callback"
 
 [client.discord]
 serverLink = "https://discord.com/invite/VGgsQN2hYG"
@@ -272,4 +273,3 @@ url = "https://raw.githubusercontent.com/jms412/PkmnShuffleMap/master/UICONS_Hal
 
 base = { scale = 0.25 }
 pokemon = { scale = 0.4 }
-
