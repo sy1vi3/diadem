@@ -18,6 +18,7 @@ import {
 	isRaidHatched
 } from "@/lib/utils/gymUtils";
 import { formatDecimal } from "@/lib/utils/numberFormat";
+import { mAny } from "@/lib/utils/anyMessage";
 import {
 	getBestRank,
 	hasTimer,
@@ -81,7 +82,7 @@ export function getShareTitle(data: MapData | null | undefined) {
 		if (data.id) title += " | " + getStationTitle(data);
 		return title;
 	} else if (data.type === MapObjectType.GYM || data.type === MapObjectType.POKESTOP) {
-		let title = m[`pogo_${data.type}`]().toString();
+		let title = mAny(`pogo_${data.type}`);
 		if (data.name) title += ` | ${data.name}`;
 		return title;
 	} else if (data.type === MapObjectType.NEST) {

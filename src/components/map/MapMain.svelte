@@ -35,6 +35,7 @@
 	import { filtersetPageReset } from "@/lib/features/filters/filtersetPages.svelte";
 	import { getOpenedMenu, Menu, openMenu } from "@/lib/ui/menus.svelte";
 	import { MapObjectLayerId, MapSourceId } from "@/lib/map/layers";
+	import { mAny } from "@/lib/utils/anyMessage";
 	import MarkerSearchedLocation from "@/components/map/MarkerSearchedLocation.svelte";
 	import MapObjectIconLayer from "@/components/map/MapObjectIconLayer.svelte";
 	import { FeatureTypes } from "@/lib/map/render/featureTypes";
@@ -89,14 +90,21 @@
 			const directLinkData = getDirectLinkObject();
 			if (directLinkData) {
 				if (directLinkData.id) {
-					openMapObject(directLinkData as unknown as Parameters<typeof openMapObject>[0]);
+					openMapObject(directLinkData);
 				} else if ("noPermission" in directLinkData && directLinkData.noPermission) {
 					openToast(
-						m.direct_link_no_permission({ type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]() }),
+						m.direct_link_no_permission({
+							type: mAny("pogo_" + directLinkData.type)
+						}),
 						5000
 					);
 				} else {
-					openToast(m.direct_link_not_found({ type: (m as unknown as Record<string, () => string>)["pogo_" + directLinkData.type]() }), 5000);
+					openToast(
+						m.direct_link_not_found({
+							type: mAny("pogo_" + directLinkData.type)
+						}),
+						5000
+					);
 				}
 			}
 

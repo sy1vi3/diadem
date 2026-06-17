@@ -123,7 +123,9 @@ export function matchQuestFilterset(
 
 		if (questFilter.pokemon && quest.reward.type === RewardType.POKEMON) {
 			const info = quest.reward.info;
-			if (questFilter.pokemon.find((p) => p.pokemon_id === info.pokemon_id && p.form === info.form)) {
+			if (
+				questFilter.pokemon.find((p) => p.pokemon_id === info.pokemon_id && p.form === info.form)
+			) {
 				return questFilter;
 			}
 		}
@@ -133,8 +135,7 @@ export function matchQuestFilterset(
 			if (
 				questFilter.item.find(
 					(i) =>
-						i.id === info.item_id.toString() &&
-						(i.amount === undefined || i.amount === info.amount)
+						i.id === info.item_id.toString() && (i.amount === undefined || i.amount === info.amount)
 				)
 			) {
 				return questFilter;
@@ -172,8 +173,8 @@ export function matchQuestFilterset(
 			if (
 				questFilter.xlCandy.find(
 					(i) =>
-						(i.id === info.pokemon_id.toString() && i.amount === undefined) ||
-						i.amount === info.amount
+						i.id === info.pokemon_id.toString() &&
+						(i.amount === undefined || i.amount === info.amount)
 				)
 			) {
 				return questFilter;

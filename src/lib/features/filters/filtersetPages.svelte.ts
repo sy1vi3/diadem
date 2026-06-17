@@ -80,7 +80,12 @@ const pageStates = new FiniteStateMachine<FiltersetPage, PageEvents>("base", {
 			const subCategory = getCurrentSelectedFilterset()?.subCategory;
 			// @ts-ignore
 			if (majorCategory)
-				setCurrentSelectedFilterset(majorCategory, subCategory as FilterCategory | undefined, getNewFilterset(), false);
+				setCurrentSelectedFilterset(
+					majorCategory,
+					subCategory as FilterCategory | undefined,
+					getNewFilterset(),
+					false
+				);
 			updateDetailsCurrentSelectedFilterset();
 			return pageForward("overview");
 		},

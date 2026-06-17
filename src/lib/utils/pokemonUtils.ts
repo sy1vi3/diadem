@@ -142,7 +142,9 @@ export function hasTimer(data: {
 }
 
 export function getBestRank(data: Partial<PokemonData>, league: League) {
-	const ranks = (data.pvp as Record<string, PvpStats[] | undefined> | undefined)?.[league]?.map((l) => l.rank) ?? [0];
+	const ranks = (data.pvp as Record<string, PvpStats[] | undefined> | undefined)?.[league]?.map(
+		(l) => l.rank
+	) ?? [0];
 	const best = Math.min(...ranks);
 	if (!Number.isInteger(best)) return 0;
 	return best;

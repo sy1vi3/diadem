@@ -98,7 +98,10 @@
 </script>
 
 {#snippet timer()}
-	{@const timerData = data as { expire_timestamp: number | null | undefined; expire_timestamp_verified: number | boolean | null | undefined }}
+	{@const timerData = data as {
+		expire_timestamp: number | null | undefined;
+		expire_timestamp_verified: number | boolean | null | undefined;
+	}}
 	<IconValue Icon={hasTimer(timerData) ? Clock : ClockAlert}>
 		<span>
 			{#if hasTimer(timerData)}

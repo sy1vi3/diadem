@@ -13,7 +13,10 @@
 		<Card class="w-full pr-6 pl-4 py-4 space-y-2">
 			{#each areas as area}
 				<div class="flex items-center gap-2 font-semibold">
-					<LucideIcon class="size-4.5 ml-2" name={(area.properties.lucideIcon ?? "Globe") as keyof typeof icons} />
+					<LucideIcon
+						class="size-4.5 ml-2"
+						name={(area.properties.lucideIcon ?? "Globe") as keyof typeof icons}
+					/>
 					<p>
 						<span>{area.properties.name}</span>
 						{#if area.properties.parentName}

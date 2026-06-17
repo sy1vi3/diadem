@@ -93,7 +93,8 @@
 		class="py-3 px-4 "
 		title={m.settings_external_map_provider()}
 		value={getUserSettings().externalMapProvider}
-		onselect={(mapProvider) => onSettingsChange("externalMapProvider", mapProvider as ExternalMapProvider)}
+		onselect={(mapProvider) =>
+			onSettingsChange("externalMapProvider", mapProvider as ExternalMapProvider)}
 		options={AVAILABLE_MAP_PROVIDERS}
 	/>
 

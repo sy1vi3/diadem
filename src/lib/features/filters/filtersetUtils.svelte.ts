@@ -21,6 +21,7 @@ import {
 	getIconReward
 } from "@/lib/services/uicons.svelte";
 import { RaidLevel } from "@/lib/utils/gymUtils";
+import { mAny } from "@/lib/utils/anyMessage";
 import { RewardType } from "@/lib/utils/pokestopUtils";
 
 export function changeAttributeMinMax(
@@ -46,20 +47,16 @@ export function filterTitle(filterset: AnyFilterset | undefined) {
 	}
 
 	if (filterset.title.message in m) {
-		// @ts-ignore
-		const params = $state.snapshot(filterset.title.params);
+		const params = $state.snapshot(filterset.title.params) as Record<string, unknown> | undefined;
 		if (params) {
 			for (const [key, value] of Object.entries(params)) {
-				// @ts-ignore
-				if (Object.hasOwn(m, value)) {
-					// @ts-ignore
-					params[key] = m[value as string]();
+				if (typeof value === "string" && Object.hasOwn(m, value)) {
+					params[key] = mAny(value);
 				}
 			}
 		}
 
-		// @ts-ignore
-		return (m as Record<string, (...args: unknown[]) => string>)[filterset.title.message](params);
+		return mAny(filterset.title.message, params);
 	}
 	if (filterset.title.message) {
 		return filterset.title.message;

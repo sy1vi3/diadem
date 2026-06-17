@@ -30,7 +30,12 @@
 		return allSets.map((s) => {
 			return {
 				value: s.id,
-				label: s.id === defaultSetId.id ? m.default_() : ((typeof s[type] === "object" && s[type] !== null ? (s[type] as { name?: string }).name : undefined) ?? s.name)
+				label:
+					s.id === defaultSetId.id
+						? m.default_()
+						: ((typeof s[type] === "object" && s[type] !== null
+								? (s[type] as { name?: string }).name
+								: undefined) ?? s.name)
 			};
 		});
 	}
@@ -46,7 +51,10 @@
 				<SelectGroupItem class="p-4" value={iconSet.value}>
 					<img
 						class="w-5"
-						src={getIconForMap({ type, ...getIconParams } as Parameters<typeof getIconForMap>[0], iconSet.value)}
+						src={getIconForMap(
+							{ type, ...getIconParams } as Parameters<typeof getIconForMap>[0],
+							iconSet.value
+						)}
 						alt="{title} (Style: {iconSet.label})"
 					/>
 					{iconSet.label}

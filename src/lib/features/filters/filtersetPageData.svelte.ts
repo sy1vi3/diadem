@@ -35,7 +35,9 @@ export function setCurrentSelectedFilterset(
 ) {
 	filtersetPageData = {
 		majorCategory: majorCategory as keyof UserSettings["filters"],
-		subCategory: subCategory as keyof UserSettings["filters"][keyof UserSettings["filters"]] | undefined,
+		subCategory: subCategory as
+			| keyof UserSettings["filters"][keyof UserSettings["filters"]]
+			| undefined,
 		data,
 		inEdit,
 		isShared,
@@ -137,7 +139,11 @@ export function saveCurrentSelectedAttribute() {
 export function updateDetailsCurrentSelectedFilterset() {
 	const filterset = getCurrentSelectedFilterset();
 	if (filterset)
-		generateFilterDetails(filterset.majorCategory, filterset.subCategory as FilterCategory, filterset.data);
+		generateFilterDetails(
+			filterset.majorCategory,
+			filterset.subCategory as FilterCategory,
+			filterset.data
+		);
 }
 
 export function toggleFilterset(filterset: AnyFilterset, mapObject: MapObjectType) {
@@ -176,7 +182,10 @@ export function openFiltersetModal() {
 	const filterset = getCurrentSelectedFilterset();
 	if (!filterset) return;
 
-	const { majorCategory, subCategory } = filterset as { majorCategory: FilterCategory; subCategory: FilterCategory | undefined };
+	const { majorCategory, subCategory } = filterset as {
+		majorCategory: FilterCategory;
+		subCategory: FilterCategory | undefined;
+	};
 
 	if (majorCategory === "pokemon") {
 		openModal("filtersetPokemon");

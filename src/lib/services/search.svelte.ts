@@ -22,6 +22,7 @@ import { featureFamily, Features } from "@/lib/utils/features";
 import { getUserDetails } from "@/lib/services/user/userDetails.svelte";
 import type { ContestFocus, QuestReward } from "@/lib/types/mapObjectData/pokestop";
 import { openModal } from "@/lib/ui/modal.svelte";
+import { mAny } from "@/lib/utils/anyMessage";
 import type { Coords } from "@/lib/utils/coordinates";
 import { getContestText, getRewardText, RewardType } from "@/lib/utils/pokestopUtils";
 import microfuzz, {
@@ -525,7 +526,9 @@ export function initSearch(searchOptions: SearchOptions) {
 		...lureEntries,
 		...fortEntries
 	];
-	fuzzy = createFuzzySearch(allSearchResults, { getText: (e) => [e.name, (m as unknown as Record<string, (() => string) | undefined>)[e.category]?.()] });
+	fuzzy = createFuzzySearch(allSearchResults, {
+		getText: (e) => [e.name, mAny(e.category)]
+	});
 }
 
 function parseCoordinates(query: string): { lat: number; lon: number } | undefined {
@@ -596,14 +599,8 @@ export function addAddressSearchResults(data: AddressData[], query: string) {
 }
 
 async function getFortSearchEntries(searchOptions: SearchOptions, map?: maplibre.Map) {
-	const hasPokestops = hasAnyFeatureAnywhere(
-		getUserDetails().permissions,
-		[Features.POKESTOP]
-	);
-	const hasGyms = hasAnyFeatureAnywhere(
-		getUserDetails().permissions,
-		[Features.GYM]
-	);
+	const hasPokestops = hasAnyFeatureAnywhere(getUserDetails().permissions, [Features.POKESTOP]);
+	const hasGyms = hasAnyFeatureAnywhere(getUserDetails().permissions, [Features.GYM]);
 	if (!hasGyms && !hasPokestops) return;
 
 	const usedMap = map ?? getMap();

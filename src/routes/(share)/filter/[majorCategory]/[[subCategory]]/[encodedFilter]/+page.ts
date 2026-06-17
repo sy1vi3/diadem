@@ -5,7 +5,13 @@ import type { PageLoad } from "./$types";
 
 export const load: PageLoad = ({ data }) => {
 	if (browser && data.majorCategory && data.filterset) {
-		setCurrentSelectedFilterset(data.majorCategory as FilterCategory, data.subCategory as FilterCategory | undefined, data.filterset, true, true);
+		setCurrentSelectedFilterset(
+			data.majorCategory as FilterCategory,
+			data.subCategory as FilterCategory | undefined,
+			data.filterset,
+			true,
+			true
+		);
 	}
 	return data;
 };
