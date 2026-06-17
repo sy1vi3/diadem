@@ -5,7 +5,7 @@
 	import { type AnySearchEntry, highlightSearchMatches } from "@/lib/services/search.svelte";
 	import { Command } from "bits-ui";
 	import { getUserSettings, updateUserSettings } from "@/lib/services/userSettings.svelte";
-	import { m } from "@/lib/paraglide/messages";
+	import { mAny } from "@/lib/utils/anyMessage";
 
 	let {
 		onselect,
@@ -60,7 +60,7 @@
 			class="text-muted-foreground shrink-0 ml-auto overflow-x-hidden text-right font-normal!"
 			{@attach highlightSearchMatches(result.matches[1])}
 		>
-			{(m[result.item.category] as (() => string) | undefined)?.() ?? ""}
+			{mAny(result.item.category)}
 		</span>
 	</div>
 </Command.Item>
