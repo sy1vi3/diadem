@@ -53,11 +53,6 @@ export function parseQuestReward(reward?: string | null) {
 	return parsed;
 }
 
-export function getArTag(isAr: boolean) {
-	if (isAr) return m.quest_ar_tag();
-	return m.quest_noar_tag();
-}
-
 export function hasFortActiveLure(data: Partial<PokestopData>) {
 	return (
 		data.lure_id && data.lure_expire_timestamp && data.lure_expire_timestamp > currentTimestamp()
@@ -78,6 +73,62 @@ export function isIncidentKecleon(incident: Incident) {
 
 export function isIncidentContest(incident: Incident) {
 	return incident.display_type === INCIDENT_DISPLAY_CONTEST;
+}
+
+const QUEST_FIELDS = [
+	"quest_type",
+	"quest_timestamp",
+	"quest_target",
+	"quest_conditions",
+	"quest_rewards",
+	"quest_template",
+	"quest_title",
+	"quest_expiry",
+	"quest_reward_type",
+	"quest_item_id",
+	"quest_reward_amount",
+	"quest_pokemon_id",
+	"alternative_quest_type",
+	"alternative_quest_timestamp",
+	"alternative_quest_target",
+	"alternative_quest_conditions",
+	"alternative_quest_rewards",
+	"alternative_quest_template",
+	"alternative_quest_title",
+	"alternative_quest_expiry",
+	"alternative_quest_pokemon_id",
+	"alternative_quest_reward_type",
+	"alternative_quest_item_id",
+	"alternative_quest_reward_amount"
+] as const satisfies readonly (keyof PokestopData)[];
+
+const LURE_FIELDS = [
+	"lure_id",
+	"lure_expire_timestamp"
+] as const satisfies readonly (keyof PokestopData)[];
+
+const CONTEST_FIELDS = [
+	"showcase_pokemon_id",
+	"showcase_pokemon_form_id",
+	"showcase_focus",
+	"contest_focus",
+	"showcase_pokemon_type_id",
+	"showcase_ranking_standard",
+	"showcase_expiry",
+	"showcase_rankings"
+] as const satisfies readonly (keyof PokestopData)[];
+
+export function stripQuestFields(data: Partial<PokestopData>) {
+	data.quests = [];
+	for (const field of QUEST_FIELDS) delete data[field];
+}
+
+export function stripLureFields(data: Partial<PokestopData>) {
+	for (const field of LURE_FIELDS) delete data[field];
+}
+
+export function stripContestFields(data: Partial<PokestopData>) {
+	for (const field of CONTEST_FIELDS) delete data[field];
 }
 
 export function getRewardText(reward: QuestReward) {

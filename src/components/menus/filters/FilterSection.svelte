@@ -1,3 +1,7 @@
+<script module lang="ts">
+	const sessionExpandedState: Record<string, boolean> = {};
+</script>
+
 <script lang="ts" generics="ParentCategory extends keyof UserSettings['filters']">
 	import Card from "@/components/ui/Card.svelte";
 	import { ChevronDown, ChevronUp, Eye, EyeOff, FunnelX, Plus } from "lucide-svelte";
@@ -5,8 +9,9 @@
 	import Button from "@/components/ui/input/Button.svelte";
 	import FilterControl from "@/components/menus/filters/FilterControl.svelte";
 
+	import { untrack } from "svelte";
 	import { slide } from "svelte/transition";
-	import { hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
+	import { hasAnyFeatureAnywhere, hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
 	import { getUserDetails } from "@/lib/services/user/userDetails.svelte";
 	import type { AnyFilter, FilterCategory } from "@/lib/features/filters/filters";
 	import Switch from "@/components/ui/input/Switch.svelte";
@@ -33,7 +38,7 @@
 		isFilterable = true,
 		subCategories = []
 	}: {
-		requiredPermission: FeaturesKey;
+		requiredPermission: FeaturesKey | FeaturesKey[];
 		title: string;
 		category: ParentCategory;
 		mapObject: MapObjectType;
@@ -42,12 +47,24 @@
 		subCategories?: {
 			title: string;
 			category: FilterCategory;
+			requiredPermission: FeaturesKey;
 			filterModal?: ModalType;
 			filterable?: boolean;
 		}[];
 	} = $props();
 
-	let subcategoriesExpanded: boolean = $state(false);
+	const sectionFeatures = $derived([
+		...(Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]),
+		...subCategories.map((subcategory) => subcategory.requiredPermission)
+	]);
+
+	let subcategoriesExpanded: boolean = $state(
+		untrack(() => sessionExpandedState[category as string] ?? false)
+	);
+
+	$effect(() => {
+		sessionExpandedState[category as string] = subcategoriesExpanded;
+	});
 
 	function onEnabledChange(_: FilterCategory, value: boolean) {
 		const filter: AnyFilter = getUserSettings().filters[category];
@@ -68,8 +85,6 @@
 			value ||
 			!Object.values(getUserSettings().filters[category]).find((subcategory) => subcategory.enabled)
 		) {
-			// if enabled, always enable parent
-			// if all siblngs are disabled, disable parent
 			getUserSettings().filters[category].enabled = value;
 		}
 
@@ -79,7 +94,7 @@
 	}
 </script>
 
-{#if hasFeatureAnywhere(getUserDetails().permissions, requiredPermission)}
+{#if hasAnyFeatureAnywhere(getUserDetails().permissions, sectionFeatures)}
 	<Card class="py-1 px-2">
 		<FilterControl
 			{title}
@@ -89,6 +104,7 @@
 			majorCategory={category}
 			{onEnabledChange}
 			isExpandable={subCategories.length > 0}
+			collapsibleByFiltersets={subCategories.length === 0}
 			filter={getUserSettings().filters[category]}
 			bind:expanded={subcategoriesExpanded}
 		/>
@@ -96,17 +112,19 @@
 		{#if subCategories.length > 0}
 			{#if subcategoriesExpanded}
 				<div class="mb-2" transition:slide={{ duration: 80 }}>
-					{#each subCategories as subcategory}
-						<FilterControl
-							{mapObject}
-							title={subcategory.title}
-							majorCategory={category}
-							subCategory={subcategory.category}
-							filterModal={subcategory.filterModal}
-							isFilterable={subcategory.filterable ?? true}
-							onEnabledChange={onSubEnabledChange}
-							filter={(getUserSettings().filters[category] as unknown as Record<string, AnyFilter>)[subcategory.category]}
-						/>
+					{#each subCategories as subcategory (subcategory.category)}
+						{#if hasFeatureAnywhere(getUserDetails().permissions, subcategory.requiredPermission)}
+							<FilterControl
+								{mapObject}
+								title={subcategory.title}
+								majorCategory={category}
+								subCategory={subcategory.category}
+								filterModal={subcategory.filterModal}
+								isFilterable={subcategory.filterable ?? true}
+								onEnabledChange={onSubEnabledChange}
+								filter={(getUserSettings().filters[category] as unknown as Record<string, AnyFilter>)[subcategory.category]}
+							/>
+						{/if}
 					{/each}
 				</div>
 			{/if}

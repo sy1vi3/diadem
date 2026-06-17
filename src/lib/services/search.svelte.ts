@@ -17,7 +17,8 @@ import { m } from "@/lib/paraglide/messages";
 import { mCharacter, mItem, mPokemon, mRaid } from "@/lib/services/ingameLocale";
 import { getAllLureModuleIds } from "@/lib/services/masterfile";
 import { isSupportedFeature } from "@/lib/services/supportedFeatures";
-import { hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
+import { hasAnyFeatureAnywhere, hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
+import { featureFamily, Features } from "@/lib/utils/features";
 import { getUserDetails } from "@/lib/services/user/userDetails.svelte";
 import type { ContestFocus, QuestReward } from "@/lib/types/mapObjectData/pokestop";
 import { openModal } from "@/lib/ui/modal.svelte";
@@ -30,6 +31,7 @@ import microfuzz, {
 	type HighlightRanges
 } from "@nozbe/microfuzz";
 import type { BBox, Geometry } from "geojson";
+import type maplibre from "maplibre-gl";
 import type { Snippet } from "svelte";
 import type { Attachment } from "svelte/attachments";
 
@@ -44,6 +46,7 @@ export enum SearchableType {
 	POKEMON = "pokemon",
 	AREA = "area",
 	ADDRESS = "address",
+	COORDINATES = "coordinates",
 	GYM = "gym",
 	POKESTOP = "pokestop",
 	STATION = "station",
@@ -82,14 +85,25 @@ export type AddressSearchEntry = SearchEntry & {
 	geometry: undefined | Geometry;
 };
 
+export type CoordinatesSearchEntry = SearchEntry & {
+	icon: string;
+	type: SearchableType.COORDINATES;
+	lat: number;
+	lon: number;
+};
+
 export type PokestopSearchEntry = SearchEntry & {
 	imageUrl: string;
 	type: SearchableType.POKESTOP;
+	lat: number;
+	lon: number;
 };
 
 export type GymSearchEntry = SearchEntry & {
 	imageUrl: string;
 	type: SearchableType.GYM;
+	lat: number;
+	lon: number;
 };
 
 export type PokemonSearchEntry = SearchEntry & {
@@ -166,6 +180,7 @@ export type AnySearchEntry =
 	| MaxBattleLevelSearchEntry
 	| NestSearchEntry
 	| AddressSearchEntry
+	| CoordinatesSearchEntry
 	| GymSearchEntry
 	| PokestopSearchEntry;
 
@@ -174,13 +189,17 @@ export type RawFortSearchEntry = {
 	name: string;
 	id: string;
 	url: string;
+	lat: number;
+	lon: number;
 };
 
 export type SearchOptions = {
 	types?: SearchableType[];
 	showRecents?: boolean;
 	resultSnippet: Snippet<[FuzzyResult<AnySearchEntry>[]]>;
-	ignoreAddressMinCharacters?: boolean
+	ignoreAddressMinCharacters?: boolean;
+	textNoResults?: string;
+	textSearchHint?: string;
 };
 
 let currentSearchQuery = $state("");
@@ -244,7 +263,7 @@ export function getSearchedGeomtry() {
 	return searchedGeomtry;
 }
 
-export function openSearchModal(searchOptions: SearchOptions) {
+export function openSearchModal(searchOptions: SearchOptions, map?: maplibre.Map) {
 	openModal("search");
 
 	isSearchingAddress = false;
@@ -252,11 +271,11 @@ export function openSearchModal(searchOptions: SearchOptions) {
 		shouldSearchType(SearchableType.GYM, searchOptions) ||
 		shouldSearchType(SearchableType.POKESTOP, searchOptions)
 	) {
-		getFortSearchEntries(searchOptions).then();
+		getFortSearchEntries(searchOptions, map).then();
 	}
 }
 
-function shouldSearchType(type: SearchableType, searchOptions: SearchOptions) {
+export function shouldSearchType(type: SearchableType, searchOptions: SearchOptions) {
 	return !searchOptions.types || searchOptions.types.includes(type);
 }
 
@@ -279,7 +298,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let pokemonEntries: PokemonSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.POKEMON, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKEMON)
+		hasAnyFeatureAnywhere(permissions, featureFamily[MapObjectType.POKEMON])
 	) {
 		pokemonEntries = getSpawnablePokemon().map((p) => {
 			return {
@@ -300,7 +319,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let questEntries: QuestSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.QUEST, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKESTOP)
+		hasFeatureAnywhere(permissions, Features.QUEST)
 	) {
 		questEntries =
 			getActiveQuestRewards()?.map((r) => {
@@ -323,7 +342,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let kecleonEntries: KecleonSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.KECLEON, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKESTOP)
+		hasFeatureAnywhere(permissions, Features.KECLEON)
 	) {
 		kecleonEntries = [
 			{
@@ -338,7 +357,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let contestEntries: ContestSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.CONTEST, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKESTOP)
+		hasFeatureAnywhere(permissions, Features.CONTEST)
 	) {
 		contestEntries = getActiveContests().map((contest) => {
 			return {
@@ -355,7 +374,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let lureEntries: LureSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.LURE, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKESTOP)
+		hasFeatureAnywhere(permissions, Features.LURE)
 	) {
 		lureEntries = getAllLureModuleIds().map((lure) => {
 			return {
@@ -371,7 +390,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let invasionEntries: InvasionSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.INVASION, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.POKESTOP)
+		hasFeatureAnywhere(permissions, Features.INVASION)
 	) {
 		invasionEntries = getActiveCharacters().map((character) => {
 			return {
@@ -390,7 +409,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	if (
 		(shouldSearchType(SearchableType.RAID_LEVEL, searchOptions) ||
 			shouldSearchType(SearchableType.RAID_BOSS, searchOptions)) &&
-		hasFeatureAnywhere(permissions, MapObjectType.GYM)
+		hasFeatureAnywhere(permissions, Features.RAID)
 	) {
 		raidBossEntries = getActiveRaids()
 			.map((raidBoss) => {
@@ -425,7 +444,7 @@ export function initSearch(searchOptions: SearchOptions) {
 	let maxBattleBossEntries: MaxBattleBossSearchEntry[] = [];
 	if (
 		shouldSearchType(SearchableType.MAX_BATTLE_BOSS, searchOptions) &&
-		hasFeatureAnywhere(permissions, MapObjectType.STATION)
+		hasFeatureAnywhere(permissions, Features.MAX_BATTLE)
 	) {
 		maxBattleBossEntries = getActiveMaxBattles().map((maxBattle) => {
 			return {
@@ -473,7 +492,9 @@ export function initSearch(searchOptions: SearchOptions) {
 					imageUrl: fort.url,
 					type: SearchableType.GYM,
 					key: fort.id,
-					category: "pogo_gym"
+					category: "pogo_gym",
+					lat: fort.lat,
+					lon: fort.lon
 				} as GymSearchEntry;
 			}
 
@@ -482,7 +503,9 @@ export function initSearch(searchOptions: SearchOptions) {
 				imageUrl: fort.url,
 				type: SearchableType.POKESTOP,
 				key: fort.id,
-				category: "pogo_pokestop"
+				category: "pogo_pokestop",
+				lat: fort.lat,
+				lon: fort.lon
 			} as PokestopSearchEntry;
 		});
 
@@ -505,13 +528,39 @@ export function initSearch(searchOptions: SearchOptions) {
 	fuzzy = createFuzzySearch(allSearchResults, { getText: (e) => [e.name, (m as unknown as Record<string, (() => string) | undefined>)[e.category]?.()] });
 }
 
+function parseCoordinates(query: string): { lat: number; lon: number } | undefined {
+	const match = query.trim().match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
+	if (!match) return;
+	const lat = parseFloat(match[1]);
+	const lon = parseFloat(match[2]);
+	if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+	return { lat, lon };
+}
+
 export function search(query: string, limit: boolean, searchOptions: SearchOptions) {
 	if (shouldSearchType(SearchableType.ADDRESS, searchOptions) && isSupportedFeature("geocoding")) {
 		searchAddress(query, searchOptions?.ignoreAddressMinCharacters ?? false).then();
 	}
 
-	let results = fuzzy(query);
+	let results: FuzzyResult<AnySearchEntry>[] = fuzzy(query);
 	if (limit) results = results.slice(0, searchLimit);
+
+	if (shouldSearchType(SearchableType.COORDINATES, searchOptions)) {
+		const coords = parseCoordinates(query);
+		if (coords) {
+			const entry: CoordinatesSearchEntry = {
+				name: `${coords.lat}, ${coords.lon}`,
+				category: "coordinates",
+				key: `coordinates-${coords.lat}-${coords.lon}`,
+				icon: "MapPin",
+				type: SearchableType.COORDINATES,
+				lat: coords.lat,
+				lon: coords.lon
+			};
+			results = [{ item: entry, score: 0, matches: [] }, ...results];
+		}
+	}
+
 	searchResults = results;
 }
 
@@ -546,22 +595,28 @@ export function addAddressSearchResults(data: AddressData[], query: string) {
 	isSearchingAddress = false;
 }
 
-async function getFortSearchEntries(searchOptions: SearchOptions) {
-	const hasPokestops = hasFeatureAnywhere(getUserDetails().permissions, MapObjectType.POKESTOP);
-	const hasGyms = hasFeatureAnywhere(getUserDetails().permissions, MapObjectType.GYM);
+async function getFortSearchEntries(searchOptions: SearchOptions, map?: maplibre.Map) {
+	const hasPokestops = hasAnyFeatureAnywhere(
+		getUserDetails().permissions,
+		[Features.POKESTOP]
+	);
+	const hasGyms = hasAnyFeatureAnywhere(
+		getUserDetails().permissions,
+		[Features.GYM]
+	);
 	if (!hasGyms && !hasPokestops) return;
 
-	const map = getMap();
-	if (!map) return;
+	const usedMap = map ?? getMap();
+	if (!usedMap) return;
 
-	const center = map.getCenter();
+	const center = usedMap.getCenter();
 	const latKey = center.lat.toFixed(2);
 	const lonKey = center.lng.toFixed(2);
 	if (fortData.lat === latKey && fortData.lon === lonKey) {
 		return fortData.data;
 	}
 
-	const bounds = getFixedBounds(8);
+	const bounds = getFixedBounds(8, usedMap);
 	const response = await fetch("/api/search/forts", {
 		body: JSON.stringify(bounds),
 		method: "POST"
