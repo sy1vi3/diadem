@@ -1,9 +1,14 @@
 import type { FilterPokestop } from "@/lib/features/filters/filters";
 import type { FiltersetInvasion, FiltersetQuest } from "@/lib/features/filters/filtersets";
-import { getInvasionCatchable, hasInvasionLineup } from "@/lib/features/masterStats.svelte";
+import {
+	getActiveCharacters,
+	getInvasionCatchable,
+	getInvasionLineup
+} from "@/lib/features/masterStats.svelte";
 import { isCurrentSelectedOverwrite } from "@/lib/mapObjects/currentSelectedState.svelte";
 import type { Incident, PokestopData, QuestData } from "@/lib/types/mapObjectData/pokestop";
 import { currentTimestamp } from "@/lib/utils/currentTimestamp";
+import { getNormalizedForm } from "@/lib/utils/pokemonUtils";
 import {
 	getActivePokestopFilter,
 	hasFortActiveLure,
@@ -13,6 +18,7 @@ import {
 	isIncidentKecleon,
 	RewardType
 } from "@/lib/utils/pokestopUtils";
+import type { MinPokemon, PokemonVisual } from "$lib/types/mapObjectData/pokemon";
 
 export function matchInvasionFilterset(
 	incident: Incident,
@@ -23,17 +29,28 @@ export function matchInvasionFilterset(
 	const invasionFilters = pokestopFilters.invasion.filters.filter((f) => f.enabled);
 	if (invasionFilters.length === 0) return;
 
+	let possibleRewards: MinPokemon[] = [];
+
+	if (incident.confirmed_reward) {
+		possibleRewards.push(incident.confirmed_reward);
+		const lineup = getInvasionLineup(incident.character);
+		const extraCatchables = lineup?.second?.filter((l) => l.encounter);
+		if (extraCatchables?.length) {
+			possibleRewards.push(...extraCatchables);
+		}
+	} else {
+		possibleRewards = getInvasionCatchable(incident.character) ?? [];
+	}
+
 	for (const invasionFilter of invasionFilters) {
 		if (invasionFilter.characters && invasionFilter.characters?.includes(incident.character))
 			return invasionFilter;
 
-		if (!hasInvasionLineup(incident.character)) continue;
-
-		const catchableRewards = getInvasionCatchable(incident.character) ?? [];
+		if (possibleRewards.length === 0) continue;
 
 		if (
 			invasionFilter.rewards?.find((r) => {
-				return catchableRewards.find((c) => c.pokemon_id === r.pokemon_id && c.form === r.form);
+				return possibleRewards.find((c) => c.pokemon_id === r.pokemon_id && c.form === r.form);
 			})
 		) {
 			return invasionFilter;
@@ -91,6 +108,7 @@ export function matchQuestFilterset(
 
 		const hasRewardFilter = !!(
 			questFilter.stardust ||
+			questFilter.pokecoins ||
 			questFilter.xp ||
 			questFilter.pokemon ||
 			questFilter.item ||
@@ -108,6 +126,15 @@ export function matchQuestFilterset(
 			quest.reward.type === RewardType.STARDUST &&
 			quest.reward.info.amount >= questFilter.stardust.min &&
 			quest.reward.info.amount <= questFilter.stardust.max
+		) {
+			return questFilter;
+		}
+
+		if (
+			questFilter.pokecoins &&
+			quest.reward.type === RewardType.POKECOINS &&
+			quest.reward.info.amount >= questFilter.pokecoins.min &&
+			quest.reward.info.amount <= questFilter.pokecoins.max
 		) {
 			return questFilter;
 		}
@@ -142,13 +169,16 @@ export function matchQuestFilterset(
 			}
 		}
 
-		if (questFilter.megaResource && quest.reward.type === RewardType.MEGA_ENERGY) {
+		if (
+			questFilter.megaResource &&
+			(quest.reward.type === RewardType.MEGA_ENERGY ||
+				quest.reward.type === RewardType.TEMP_EVO_BRANCH_RESOURCE)
+		) {
 			const info = quest.reward.info;
 			if (
 				questFilter.megaResource.find(
 					(i) =>
-						i.id === info.pokemon_id.toString() &&
-						(i.amount === undefined || i.amount === info.amount)
+						i.id === String(info.pokemon_id) && (i.amount === undefined || i.amount === info.amount)
 				)
 			) {
 				return questFilter;
@@ -221,32 +251,18 @@ export function shouldDisplayContest(
 	const contestFilters = pokestopFilters.contest.filters.filter((f) => f.enabled);
 	if (contestFilters.length === 0) return true;
 
+	const focus: Record<string, unknown> = data.contest_focus ?? {};
 	for (const contestFilter of contestFilters) {
-		if (
-			contestFilter.rankingStandard &&
-			contestFilter.rankingStandard !== data.showcase_ranking_standard
-		) {
-			return false;
+		if (contestFilter.rankingStandard !== data.showcase_ranking_standard) continue;
+		let filterFocus = contestFilter.focus;
+		if (filterFocus.type === "pokemon") {
+			filterFocus = {
+				...filterFocus,
+				pokemon_form: getNormalizedForm(filterFocus.pokemon_id, filterFocus.pokemon_form ?? 0)
+			};
 		}
-
-		if (
-			contestFilter.focus.pokemon_id &&
-			contestFilter.focus.pokemon_id !== data.showcase_pokemon_id
-		) {
-			return false;
-		}
-
-		if (contestFilter.focus.form && contestFilter.focus.form !== data.showcase_pokemon_form_id) {
-			return false;
-		}
-
-		if (
-			contestFilter.focus.type_id &&
-			contestFilter.focus.type_id !== data.showcase_pokemon_type_id
-		) {
-			return false;
-		}
+		if (Object.entries(filterFocus).every(([key, value]) => focus[key] === value)) return true;
 	}
 
-	return true;
+	return false;
 }

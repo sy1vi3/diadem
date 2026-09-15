@@ -51,10 +51,12 @@ export type PokestopData = {
 	showcase_pokemon_form_id?: number;
 	showcase_focus?: string;
 	contest_focus?: ContestFocus;
+	contest_rankings?: ContestRankings;
 	showcase_pokemon_type_id?: number;
 	showcase_ranking_standard?: number;
 	showcase_expiry?: number;
 	showcase_rankings?: string;
+	isRouteEndpoint?: true;
 };
 
 export type Incident = {
@@ -67,6 +69,7 @@ export type Incident = {
 	character: number;
 	updated: number;
 	confirmed: boolean;
+	confirmed_reward?: PokemonVisual;
 	slot_1_pokemon_id?: number;
 	slot_1_form?: number;
 	slot_2_pokemon_id?: number;
@@ -81,6 +84,7 @@ export type QuestData = {
 	target: number;
 	timestamp: number;
 	expires: number;
+	template: string;
 };
 
 export type ContestEntry = {
@@ -95,7 +99,7 @@ export type ContestEntry = {
 	temp_evolution_finish_ms: number;
 	alignment: number;
 	badge: number;
-	location_card: number;
+	background: number;
 };
 
 export type ContestRankings = {
@@ -185,7 +189,10 @@ export type QuestReward =
 	| QuestRewardIncident
 	| QuestRewardPlayerAttribute
 	| QuestRewardEventBadge
-	| QuestRewardPokemonEgg;
+	| QuestRewardPokemonIndividualStat
+	| QuestRewardLootTable
+	| QuestRewardFriendshipPoints
+	| QuestRewardTempEvoBranch;
 
 export type QuestRewardExperience = {
 	type: RewardType.XP;
@@ -262,7 +269,22 @@ export type QuestRewardEventBadge = {
 	info: {};
 };
 
-export type QuestRewardPokemonEgg = {
-	type: RewardType.POKEMON_EGG;
+export type QuestRewardPokemonIndividualStat = {
+	type: RewardType.POKEMON_INDIVIDUAL_STAT;
 	info: {};
+};
+
+export type QuestRewardLootTable = {
+	type: RewardType.LOOT_TABLE;
+	info: {};
+};
+
+export type QuestRewardFriendshipPoints = {
+	type: RewardType.FRIENDSHIP_POINTS;
+	info: {};
+};
+
+export type QuestRewardTempEvoBranch = {
+	type: RewardType.TEMP_EVO_BRANCH_RESOURCE;
+	info: { amount: number; pokemon_id?: number; temp_evolution?: number };
 };

@@ -14,6 +14,11 @@ export type PvpStats = {
 	evolution?: number;
 };
 
+export type MinPokemon = {
+	pokemon_id: number;
+	form: number;
+};
+
 export type PokemonVisual = {
 	pokemon_id: number;
 	form: number;
@@ -23,6 +28,7 @@ export type PokemonVisual = {
 	temp_evolution_id?: number;
 	alignment?: number;
 	bread_mode?: number;
+	background?: number;
 };
 
 export type PokemonData = {

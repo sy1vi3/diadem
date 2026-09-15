@@ -6,3 +6,31 @@ yarn.lock
 # Markdown
 *.md
 *.mdx
+
+# Generated
+src/lib/paraglide
+project.inlang/cache
+src/lib/server/api/grpc/golbat_api.ts
+
+# Build output
+build
+.svelte-kit
+.svelte-kit-native
+coverage
+docs/dist
+docs/.astro
+
+# Android: gradle output, caches, and the web assets Capacitor syncs in
+android/**/build
+android/.gradle
+android/app/src/main/assets
+
+# iOS: Xcode/CocoaPods output and web assets Capacitor syncs in
+ios/App/build
+ios/App/Pods
+ios/App/App/public
+ios/DerivedData
+
+# Release artifacts
+*.apk
+*.aab

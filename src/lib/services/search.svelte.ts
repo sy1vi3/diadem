@@ -25,6 +25,7 @@ import { openModal } from "@/lib/ui/modal.svelte";
 import { mAny } from "@/lib/utils/anyMessage";
 import type { Coords } from "@/lib/utils/coordinates";
 import { getContestText, getRewardText, RewardType } from "@/lib/utils/pokestopUtils";
+import { encodeRequestBody, getHeaders, parseResponse } from "@/lib/utils/requests";
 import microfuzz, {
 	fuzzyMatch,
 	type FuzzyResult,
@@ -32,7 +33,7 @@ import microfuzz, {
 	type HighlightRanges
 } from "@nozbe/microfuzz";
 import type { BBox, Geometry } from "geojson";
-import type maplibre from "maplibre-gl";
+import type * as maplibre from "maplibre-gl";
 import type { Snippet } from "svelte";
 import type { Attachment } from "svelte/attachments";
 
@@ -142,6 +143,7 @@ export type RaidBossSearchEntry = SearchEntry & {
 	type: SearchableType.RAID_BOSS;
 	pokemon_id: number;
 	form: number;
+	temp_evolution_id: number;
 };
 
 export type RaidLevelSearchEntry = SearchEntry & {
@@ -293,6 +295,19 @@ function getAreaSearchEntries() {
 	});
 }
 
+export function getActiveSearchQuestParams(reward: QuestReward) {
+	const reward2 = { type: reward.type, info: { ...reward.info, amount: 0 } } as QuestReward;
+	let rewardName = getRewardText(reward2);
+	if (reward2.type === RewardType.POKEMON) {
+		rewardName = m.x_quests({ x: rewardName });
+	}
+
+	return {
+		reward: reward2,
+		name: rewardName
+	};
+}
+
 export function initSearch(searchOptions: SearchOptions) {
 	const permissions = getUserDetails().permissions;
 
@@ -322,22 +337,20 @@ export function initSearch(searchOptions: SearchOptions) {
 		shouldSearchType(SearchableType.QUEST, searchOptions) &&
 		hasFeatureAnywhere(permissions, Features.QUEST)
 	) {
-		questEntries =
-			getActiveQuestRewards()?.map((r) => {
-				const reward = { type: r.type, info: { ...r.info, amount: 0 } } as QuestReward;
-				let rewardName = getRewardText(reward);
-				if (reward.type === RewardType.POKEMON) {
-					rewardName = m.x_quests({ x: rewardName });
-				}
+		const uniqueRewards: Record<string, QuestSearchEntry> = {};
+		for (const r of getActiveQuestRewards() ?? []) {
+			const { name, reward } = getActiveSearchQuestParams(r);
+			const key = "quest-" + JSON.stringify(reward);
 
-				return {
-					name: rewardName,
-					category: "pogo_quests",
-					key: "quest-" + JSON.stringify(reward),
-					type: SearchableType.QUEST,
-					reward
-				} as QuestSearchEntry;
-			}) ?? [];
+			uniqueRewards[key] = {
+				category: "pogo_quests",
+				key,
+				type: SearchableType.QUEST,
+				name,
+				reward
+			} as QuestSearchEntry;
+		}
+		questEntries = Object.values(uniqueRewards);
 	}
 
 	let kecleonEntries: KecleonSearchEntry[] = [];
@@ -433,10 +446,17 @@ export function initSearch(searchOptions: SearchOptions) {
 				return {
 					name: m.pokemon_raids({ pokemon: mPokemon(raidBoss) }),
 					category: "raids",
-					key: "raidboss- " + raidBoss.pokemon_id + "-" + raidBoss.form,
+					key:
+						"raidboss- " +
+						raidBoss.pokemon_id +
+						"-" +
+						raidBoss.form +
+						"-" +
+						raidBoss.temp_evolution_id,
 					type: SearchableType.RAID_BOSS,
 					pokemon_id: raidBoss.pokemon_id,
-					form: raidBoss.form
+					form: raidBoss.form,
+					temp_evolution_id: raidBoss.temp_evolution_id
 				} as RaidBossSearchEntry;
 			})
 			.filter((entry) => entry !== undefined);
@@ -614,8 +634,10 @@ async function getFortSearchEntries(searchOptions: SearchOptions, map?: maplibre
 	}
 
 	const bounds = getFixedBounds(8, usedMap);
+	const encoded = encodeRequestBody(bounds);
 	const response = await fetch("/api/search/forts", {
-		body: JSON.stringify(bounds),
+		body: encoded.body,
+		headers: getHeaders(encoded.contentType),
 		method: "POST"
 	});
 
@@ -624,7 +646,7 @@ async function getFortSearchEntries(searchOptions: SearchOptions, map?: maplibre
 		return;
 	}
 
-	const entries: RawFortSearchEntry[] = await response.json();
+	const entries = await parseResponse<RawFortSearchEntry[]>(response);
 	fortData.lat = latKey;
 	fortData.lon = lonKey;
 	fortData.data = entries;
@@ -652,12 +674,12 @@ export function highlightSearchMatches(match: HighlightRanges | null | undefined
 
 export async function backgroundGeometryLookup(osmId: string, coords: Coords) {
 	try {
-		const result = await fetch("/api/search/geometry/" + osmId);
+		const result = await fetch("/api/search/geometry/" + osmId, { headers: getHeaders() });
 		if (!result.ok) {
 			setSearchedLocation(coords);
 			return;
 		}
-		const geometry = (await result.json()) as Geometry;
+		const geometry = await parseResponse<Geometry>(result);
 		if (geometry.type) {
 			if (geometry.type === "Point") {
 				setSearchedLocation(coords);

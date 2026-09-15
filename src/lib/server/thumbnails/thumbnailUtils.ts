@@ -1,4 +1,4 @@
-import { type MapData, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
+import { type QueryableMapData, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import { resize } from "@/lib/services/assets";
 import { getConfig } from "@/lib/services/config/config";
 import { getServerConfig } from "@/lib/services/config/config.server";
@@ -58,7 +58,7 @@ export async function fetchStaticMapBase64(
 		coords: Coords;
 		width: number;
 		height: number;
-		data: MapData;
+		data: QueryableMapData;
 		iconUrl?: string;
 	}
 ): Promise<string | null> {
@@ -84,8 +84,8 @@ export async function fetchStaticMapBase64(
 	const offsetY =
 		(typeof modifier === "object" ? modifier?.offsetY : undefined) ?? baseModifier?.offsetY ?? 0;
 
-	const markerModifier = 64 * 2.5;
-	const markerSize = scale * markerModifier;
+	const markerModifier = scale * 2;
+	const markerSize = Math.round(64 * markerModifier);
 
 	const payload: Record<string, unknown> = {
 		style,
@@ -103,8 +103,8 @@ export async function fetchStaticMapBase64(
 				url: staticMap.diademUrl + resize(options.iconUrl, { width: 64 }),
 				width: markerSize,
 				height: markerSize,
-				y_offset: offsetY * markerModifier,
-				x_offset: offsetX * markerModifier,
+				y_offset: Math.round(offsetY * markerModifier),
+				x_offset: Math.round(offsetX * markerModifier),
 				latitude: options.coords.lat,
 				longitude: options.coords.lon
 			}

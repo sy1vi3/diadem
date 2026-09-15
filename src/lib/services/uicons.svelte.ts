@@ -1,23 +1,30 @@
 import { getConfig } from "@/lib/services/config/config";
+import { getInstanceUrl } from "@/lib/native/runtime";
 import type { UiconSet } from "@/lib/services/config/configTypes";
 import { getUserSettings } from "@/lib/services/userSettings.svelte.js";
 import type { GymData } from "@/lib/types/mapObjectData/gym";
 import type { PokestopData } from "@/lib/types/mapObjectData/pokestop";
 import type { StationData } from "@/lib/types/mapObjectData/station";
-import { UICONS } from "uicons.js";
+import { UICONS, type RewardTypeKeys } from "uicons.js";
 
 import { shouldDisplayIncident, shouldDisplayLure } from "@/lib/features/filterLogic/pokestop";
 import { MapObjectType, type MapData } from "@/lib/mapObjects/mapObjectTypes";
 import type { TappableData } from "@/lib/types/mapObjectData/tappable";
 import { currentTimestamp } from "@/lib/utils/currentTimestamp";
-import { GYM_SLOTS, isFortOutdated } from "@/lib/utils/gymUtils";
+import { GYM_SLOTS, isFortOutdated, RaidLevel } from "@/lib/utils/gymUtils";
 import { getLeagueCp, LeagueCp, type League } from "@/lib/utils/pokemonUtils";
 import { RewardType } from "@/lib/utils/pokestopUtils";
 import { isMaxBattleActive } from "@/lib/utils/stationUtils";
+import type { AnyFilter } from "$lib/features/filters/filters";
 
 export const DEFAULT_UICONS = "DEFAULT";
 
 const iconSets: { [key: string]: UICONS } = {};
+
+export type IconOptions<T extends AnyFilter = AnyFilter> = {
+	iconSet?: string;
+	filter?: T;
+};
 
 export async function initIconSet(id: string, url: string, thisFetch: typeof fetch = fetch) {
 	if (id in iconSets) return;
@@ -45,8 +52,9 @@ export async function initIconSet(id: string, url: string, thisFetch: typeof fet
 }
 
 export async function initAllIconSets(thisFetch: typeof fetch = fetch) {
+	const base = getInstanceUrl();
 	await Promise.all(
-		getConfig().uiconSets.map((s) => initIconSet(s.id, `/assets/${s.id}/`, thisFetch))
+		getConfig().uiconSets.map((s) => initIconSet(s.id, `${base}/assets/${s.id}/`, thisFetch))
 	);
 }
 
@@ -64,19 +72,19 @@ export function getCurrentUiconSetDetailsAllTypes(): Partial<Record<MapObjectTyp
 	};
 }
 
-export function getIconForMap(data: Partial<MapData>, iconSet?: string): string {
+export function getIconForMap(data: Partial<MapData>, options?: IconOptions): string {
 	if (data.type === MapObjectType.POKEMON) {
-		return getIconPokemon(data, iconSet);
+		return getIconPokemon(data, options);
 	} else if (data.type === MapObjectType.POKESTOP) {
-		return getIconPokestop(data, iconSet);
+		return getIconPokestop(data, options);
 	} else if (data.type === MapObjectType.GYM) {
-		return getIconGym(data, iconSet);
+		return getIconGym(data, options);
 	} else if (data.type === MapObjectType.STATION) {
-		return getIconStation(data, iconSet);
+		return getIconStation(data, options);
 	} else if (data.type === MapObjectType.TAPPABLE) {
-		return getIconTappable(data, iconSet);
+		return getIconTappable(data, options);
 	} else if (data.type === MapObjectType.NEST) {
-		return getIconPokemon(data, iconSet);
+		return getIconPokemon(data, options);
 	}
 
 	return "";
@@ -93,33 +101,34 @@ export function getIconPokemon(
 		bread_mode?: number | null | undefined;
 		shiny?: number | boolean | null | undefined;
 	},
-	iconSet: string = getUserSettings().uiconSet.pokemon.id
+	options?: IconOptions
 ) {
-	return iconSets[iconSet].pokemon(
-		data.pokemon_id,
-		data.temp_evolution_id,
-		data.form,
-		data.costume,
-		data.gender,
-		data.alignment,
-		data.bread_mode,
-		Boolean(data.shiny)
-	);
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.pokemon.id;
+	return iconSets[iconSet].pokemon({
+		pokemonId: data.pokemon_id ?? 0,
+		evolution: data.temp_evolution_id ?? 0,
+		form: data.form ?? 0,
+		costume: data.costume ?? 0,
+		gender: data.gender ?? 0,
+		alignment: data.alignment ?? 0,
+		bread: data.bread_mode ?? 0,
+		shiny: Boolean(data.shiny)
+	});
 }
 
-export function getIconPokestop(
-	data: Partial<PokestopData>,
-	iconSet: string = getUserSettings().uiconSet.pokestop.id
-) {
+export function getIconPokestop(data: Partial<PokestopData>, options?: IconOptions) {
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.pokestop.id;
+	const filter = options?.filter?.category === "pokestop" ? options.filter : undefined;
+
 	let lureId = 0;
-	if (shouldDisplayLure(data)) {
+	if (shouldDisplayLure(data, filter)) {
 		lureId = data.lure_id ?? 0;
 	}
 
 	let displayType: boolean | number = false;
 	for (const incident of data.incident ?? []) {
 		if (
-			shouldDisplayIncident(incident, data) &&
+			shouldDisplayIncident(incident, data, filter) &&
 			incident.display_type &&
 			incident.expiration > currentTimestamp()
 		) {
@@ -128,39 +137,38 @@ export function getIconPokestop(
 		}
 	}
 
-	return iconSets[iconSet].pokestop(lureId, displayType, false);
+	return iconSets[iconSet].pokestop({ lureId, displayTypeId: displayType, questActive: false });
 }
 
-export function getIconGym(
-	data: Partial<GymData>,
-	iconSet: string = getUserSettings().uiconSet.gym.id
-) {
+export function getIconGym(data: Partial<GymData>, options?: IconOptions) {
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.gym.id;
 	let availableSlots = data.availble_slots ? GYM_SLOTS - data.availble_slots : GYM_SLOTS;
 	if (isFortOutdated(data.updated)) availableSlots = GYM_SLOTS;
 
 	let teamId = data.team_id;
 	if (isFortOutdated(data.updated)) teamId = 0;
 
-	return iconSets[iconSet].gym(
+	return iconSets[iconSet].gym({
 		teamId,
-		availableSlots,
-		Boolean(data.in_battle),
-		Boolean(data.ex_raid_eligible)
-	);
+		trainerCount: availableSlots,
+		inBattle: Boolean(data.in_battle),
+		ex: Boolean(data.ex_raid_eligible)
+	});
 }
 
-export function getIconStation(
-	data: Partial<StationData> | boolean,
-	iconSet: string = getUserSettings().uiconSet.station.id
-) {
+export function getIconStation(data: Partial<StationData> | boolean, options?: IconOptions) {
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.station.id;
 	if (typeof data === "boolean") {
-		return iconSets[iconSet].station(data ?? false);
+		return iconSets[iconSet].station({ active: data ?? false });
 	}
-	return iconSets[iconSet].station(isMaxBattleActive(data));
+	return iconSets[iconSet].station({ active: isMaxBattleActive(data) });
 }
 
 export function getIconInvasion(character: number | null, confirmed: number | boolean | null) {
-	return iconSets[DEFAULT_UICONS].invasion(character, Boolean(confirmed));
+	return iconSets[DEFAULT_UICONS].invasion({
+		gruntId: character ?? 0,
+		confirmed: Boolean(confirmed)
+	});
 }
 
 export function getIconReward(
@@ -217,64 +225,85 @@ export function getIconReward(
 		case RewardType.PLAYER_ATTRIBUTE:
 			rewardType = "player_attribute";
 			break;
+		case RewardType.TEMP_EVO_BRANCH_RESOURCE:
+			// return getIconPokemon(info);
+			// wwm-uicons doesn't have mega energy, just using normal mega instead
+			rewardType = "mega_resource";
+			id = info.pokemon_id;
+			break;
 		default:
 			rewardType = "";
 	}
 
-	return iconSets[DEFAULT_UICONS].reward(rewardType as Lowercase<string>, id, info.amount ?? 0);
+	return iconSets[DEFAULT_UICONS].reward({
+		questRewardType: rewardType as RewardTypeKeys,
+		rewardId: id,
+		amount: info.amount ?? 0
+	});
 }
 
 export function getIconItem(itemId: number | string, amount: number = 0) {
-	return iconSets[DEFAULT_UICONS].reward("item", itemId, amount);
+	return iconSets[DEFAULT_UICONS].reward({
+		questRewardType: "item",
+		rewardId: itemId,
+		amount
+	});
 }
 
 export function getIconRaidEgg(level: number, hatched: boolean = false) {
-	return iconSets[DEFAULT_UICONS].raidEgg(level, hatched);
+	// temporary: show super megas as default mega eggs (no icons available)
+	if (level === RaidLevel.MEGA_SUPER || level === RaidLevel.MEGA_SUPER_LEGENDARY) {
+		level -= 10;
+	}
+	return iconSets[DEFAULT_UICONS].raidEgg({ level, hatched });
 }
 
 export function getIconType(type: number) {
-	return iconSets[DEFAULT_UICONS].type(type);
+	return iconSets[DEFAULT_UICONS].type({ typeId: type });
 }
 
 export function getIconContest() {
-	return iconSets[DEFAULT_UICONS].misc("showcase");
+	return iconSets[DEFAULT_UICONS].misc({ fileName: "showcase" });
 }
 
 export function getIconLeague(league: League) {
 	return (
-		iconSets[DEFAULT_UICONS].misc(getLeagueCp(league)) ??
-		iconSets[DEFAULT_UICONS].misc(LeagueCp.GREAT)
+		iconSets[DEFAULT_UICONS].misc({ fileName: getLeagueCp(league) }) ??
+		iconSets[DEFAULT_UICONS].misc({ fileName: LeagueCp.GREAT })
 	);
 }
 
 export function getIconTeam(teamId: number) {
-	return iconSets[DEFAULT_UICONS].team(teamId);
+	return iconSets[DEFAULT_UICONS].team({ teamId });
+}
+
+export function getIconBackground(backgroundId: number) {
+	const url = iconSets[DEFAULT_UICONS].background({ id: backgroundId });
+	if (url.endsWith("/0.png")) return "/loader.svg";
+	return url;
 }
 
 export function getIconPokestopDirect(
 	lureId: number,
 	displayType: number | false,
 	questActive: boolean,
-	iconSet: string = getUserSettings().uiconSet.pokestop.id
+	options?: IconOptions
 ) {
-	return iconSets[iconSet].pokestop(lureId, displayType, questActive);
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.pokestop.id;
+	return iconSets[iconSet].pokestop({ lureId, displayTypeId: displayType, questActive });
 }
 
-export function getIconGymDirect(
-	teamId: number,
-	iconSet: string = getUserSettings().uiconSet.gym.id
-) {
-	return iconSets[iconSet].gym(teamId);
+export function getIconGymDirect(teamId: number, options?: IconOptions) {
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.gym.id;
+	return iconSets[iconSet].gym({ teamId });
 }
 
-export function getIconTappable(
-	data: Partial<TappableData>,
-	iconSet: string = getUserSettings().uiconSet.tappable.id
-) {
+export function getIconTappable(data: Partial<TappableData>, options?: IconOptions) {
+	const iconSet = options?.iconSet ?? getUserSettings().uiconSet.tappable.id;
 	if (data.item_id) {
 		return getIconItem(data.item_id, data.count ?? 1);
 	} else if (data.pokemon_id) {
-		return getIconPokemon(data);
+		return getIconPokemon(data, options);
 	}
-	return iconSets[iconSet].tappable(data.tappable_type);
+	return iconSets[iconSet].tappable({ tappableType: data.tappable_type });
 }

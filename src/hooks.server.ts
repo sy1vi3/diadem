@@ -8,7 +8,7 @@ import {
 	getDiscordAccessToken,
 	isAuthEnabled
 } from "@/lib/server/auth/betterAuth";
-import TTLCache from "@isaacs/ttlcache";
+import { TTLCache } from "@isaacs/ttlcache";
 import { getEveryonePerms, updatePermissions } from "@/lib/server/auth/permissions";
 import type { User } from "@/lib/server/db/internal/schema";
 import { PERMISSION_UPDATE_INTERVAL } from "@/lib/constants";
@@ -50,6 +50,15 @@ const permissionCache: TTLCache<string, Perms> = new TTLCache({
 const authLog = getServerLogger("auth");
 const permissionUpdateInFlight = new Map<string, Promise<Perms>>();
 
+const publicRoutePrefixes = ["/api/locale/", "/assets/"];
+const publicRoutes = new Set(["/api/config", "/api/pogodata", "/api/koji", "/api/stats"]);
+
+function isPublicRoute(pathname: string) {
+	return (
+		publicRoutes.has(pathname) || publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix))
+	);
+}
+
 function updatePermissionsLocked(user: User, accessToken: string, thisFetch: typeof fetch) {
 	let updatePromise = permissionUpdateInFlight.get(user.id);
 	if (!updatePromise) {
@@ -62,8 +71,24 @@ function updatePermissionsLocked(user: User, accessToken: string, thisFetch: typ
 }
 
 const handleAuth: Handle = async ({ event, resolve }) => {
+	if (process.env.BUILD_TARGET === "native") {
+		event.locals.perms = { everywhere: [], areas: [] };
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
+	}
+
 	if (auth && event.url.pathname.startsWith(`${AUTH_BASE_PATH}/`)) {
 		return auth.handler(event.request);
+	}
+
+	// These endpoints never use request-specific permissions. Avoid a session, database,
+	// and Koji lookup so they remain safe and useful CDN cache candidates.
+	if (isPublicRoute(event.url.pathname)) {
+		event.locals.perms = { everywhere: [], areas: [] };
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
 	}
 
 	event.locals.perms = await getEveryonePerms(event.fetch);
@@ -124,6 +149,8 @@ export const init: ServerInit = async () => {
 			crit: (message, ...args) => winstonLogger.crit(message, ...args)
 		};
 	});
+
+	if (process.env.BUILD_TARGET === "native") return;
 
 	const { initDiadem } = await import("@/lib/server/init");
 	await initDiadem();

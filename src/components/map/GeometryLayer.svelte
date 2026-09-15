@@ -4,7 +4,7 @@
 	import { CoverageMapLayerId, type MapSourceId, updateMapGeojsonSource } from "@/lib/map/layers";
 	import { getUserSettings } from "@/lib/services/userSettings.svelte";
 	import { getMap, getMapStyleVersion } from "@/lib/map/map.svelte";
-	import maplibre from "maplibre-gl";
+	import type * as maplibre from "maplibre-gl";
 	import { tick } from "svelte";
 
 	let {
@@ -15,7 +15,8 @@
 		fillId = undefined,
 		strokeId = undefined,
 		map = undefined,
-		hoverCursor = undefined
+		hoverCursor = undefined,
+		fillOpacity = 0.5
 	}: {
 		id: MapSourceId;
 		data?: FeatureCollection;
@@ -25,6 +26,7 @@
 		strokeId?: any;
 		map?: maplibre.Map;
 		hoverCursor?: string;
+		fillOpacity?: number;
 	} = $props();
 
 	let lastWasEmpty = true;
@@ -60,7 +62,7 @@
 			filter={["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false]}
 			paint={{
 				"fill-color": ["get", "fillColor"],
-				"fill-opacity": 0.5
+				"fill-opacity": fillOpacity
 			}}
 		/>
 		<LineLayer

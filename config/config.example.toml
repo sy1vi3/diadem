@@ -6,6 +6,13 @@ level = "info" # crit, error, warning, info, debug
 url = "http://127.0.0.1:9001"
 secret = ""
 
+# [Experimental] Optionally enable gRPC communication with Golbat
+# grpc = "127.0.0.1:50001"
+
+# Set to false to always serve gyms/pokestops/stations from SQL, ignoring Golbat's fort API and gRPC
+# Recommendation: Leave this commented
+# fortApi = false
+
 # This can be configured in Fletchling. Match the string to its config
 defaultNestName = "Unknown Nest"
 
@@ -172,6 +179,9 @@ defaultZoom = 15
 #minZoom = 0
 #maxZoom = 20
 
+# [Experimental] Encode client requests with msgpack. JSON costs more bytes but far less CPU on both ends
+# msgpack = false
+
 # Values to be used in search engine entries and social media previews
 url = ""  # i.e. "https://malt.ee"
 image = ""  # Full url to a thumbnail to be used in social media links
@@ -218,17 +228,28 @@ id = "positron"
 name = "Positron"
 url = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
 default = "light"
+theme = "light"
 
 [[client.mapStyles]]
 id = "dark"
 name = "Dark"
 url = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
 default = "dark"
+theme = "dark"
+
+#[[client.mapStyles]]
+#id = "satellite"
+#name = "Satellite"
+#url = "https://tiles.example.com/satellite/{z}/{x}/{y}.png"
+#theme = "satellite"
+#raster = { tileSize = 256, min = 0, max = 20 }
+#attribution = '<a href="https://provider.example.com/attribution" target="_blank">Map data attribution</a>'
 
 [[client.mapStyles]]
 id = "voyager"
 name = "Voyager"
 url = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+theme = "light"
 
 
 ### UICON Sets
@@ -248,7 +269,7 @@ raid_egg_6 = { scale = 0.3, offsetY = -135 }
 [[client.uiconSets]]
 id = "pogoOutline"
 name = "GO"
-url = "https://raw.githubusercontent.com/whitewillem/PogoAssets/refs/heads/main/uicons-outline/"
+url = "https://raw.githubusercontent.com/TiMXL73/PogoAssets/main/uicons-outline/"
 
 base = { scale = 0.5 }
 pokemon = { default = true, scale = 0.4 }

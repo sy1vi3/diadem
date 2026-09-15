@@ -1,14 +1,23 @@
+import { mergeFortAvailability } from "@/lib/server/api/queryStats";
+import { FORT_API_REFRESH_SECONDS } from "@/lib/server/api/golbat/fortAvailability";
 import { masterstatsProvider } from "@/lib/server/provider/masterStatsProvider";
-import { json } from "@sveltejs/kit";
+import { respond } from "@/lib/server/api/respond";
+import { cacheHttpHeaders } from "@/lib/utils/apiUtils.server";
 
-export async function GET() {
+export async function GET({ request }) {
 	try {
 		const stats = await masterstatsProvider.get();
-		return json(stats);
-	} catch (e) {
-		return json({
-			pokemon: {},
-			generatedAt: 0
+		return respond(request, mergeFortAvailability(stats), {
+			headers: cacheHttpHeaders(FORT_API_REFRESH_SECONDS)
 		});
+	} catch (e) {
+		return respond(
+			request,
+			{
+				pokemon: {},
+				generatedAt: 0
+			},
+			{ headers: cacheHttpHeaders(FORT_API_REFRESH_SECONDS) }
+		);
 	}
 }

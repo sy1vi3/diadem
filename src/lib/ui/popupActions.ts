@@ -1,15 +1,16 @@
 import { updateDimmedFeatures, updateRadiusFeatures } from "@/lib/map/featuresGen.svelte";
-import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
+import { ClientMapObjectType, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import * as m from "@/lib/paraglide/messages";
 import { getUserSettings, updateUserSettings } from "@/lib/services/userSettings.svelte";
 import type { LucideIcon } from "@/lib/types/lucide";
 import { mAny } from "@/lib/utils/anyMessage";
-import { Expand, Eye, SquareStack } from "lucide-svelte";
+import { Expand, Eye, SquareStack } from "@lucide/svelte";
 
 export enum PopupAction {
 	DIMMED = "dimmed",
 	RADIUS = "radius",
-	TIMER = "timer"
+	TIMER = "timer",
+	FOCUS_ROUTE = "focusRoute"
 }
 
 export type PopupActionDropdown = {
@@ -24,7 +25,8 @@ const supportedPopupActions: Partial<Record<MapObjectType, PopupAction[]>> = {
 	[MapObjectType.POKESTOP]: [PopupAction.DIMMED, PopupAction.RADIUS, PopupAction.TIMER],
 	[MapObjectType.GYM]: [PopupAction.DIMMED, PopupAction.RADIUS, PopupAction.TIMER],
 	[MapObjectType.STATION]: [PopupAction.DIMMED, PopupAction.RADIUS, PopupAction.TIMER],
-	[MapObjectType.TAPPABLE]: [PopupAction.DIMMED, PopupAction.TIMER]
+	[MapObjectType.TAPPABLE]: [PopupAction.DIMMED, PopupAction.TIMER],
+	[MapObjectType.ROUTE]: [PopupAction.FOCUS_ROUTE]
 };
 
 export function supportsPopupAction(mapObject: MapObjectType | undefined, action: PopupAction) {
@@ -76,8 +78,8 @@ export function getPopupActions(
 	}
 }
 
-export function isPopupExpanded(mapObject: MapObjectType | undefined) {
-	if (!mapObject) return false;
+export function isPopupExpanded(mapObject: MapObjectType | ClientMapObjectType | undefined) {
+	if (!mapObject || mapObject === ClientMapObjectType.LOCATION) return false;
 	return getUserSettings().actions[mapObject].expanded;
 }
 

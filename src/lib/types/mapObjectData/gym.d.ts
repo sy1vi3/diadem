@@ -40,7 +40,9 @@ export type GymData = {
 	raid_pokemon_alignment?: number;
 	defenders_raw?: string;
 	defenders?: GymDefender[];
-	rsvps?: string;
+	raw_rsvps?: string;
+	rsvps?: Rsvp[];
+	isRouteEndpoint?: true;
 };
 
 export type GymDefender = {
@@ -56,6 +58,7 @@ export type GymDefender = {
 	motivation_now: number;
 	cp_now: number;
 	cp_when_deployed: number;
+	background?: number;
 };
 
 export type Rsvp = {

@@ -1,17 +1,37 @@
 import { browser } from "$app/environment";
+import { redirect } from "@sveltejs/kit";
 import { setConfig } from "@/lib/services/config/config";
+import { getMapPath } from "@/lib/utils/getMapPath";
+import { getInstanceUrl, isNative } from "@/lib/native/runtime";
 import {
 	getDefaultUserSettings,
 	setUserSettings,
 	updateUserSettings
 } from "@/lib/services/userSettings.svelte";
 import type { LayoutLoad } from "./$types";
+import type { ClientConfig } from "@/lib/services/config/configTypes";
+import { getHeaders, parseResponse } from "@/lib/utils/requests";
 
 export const ssr = false;
 
-export const load: LayoutLoad = async ({ fetch }) => {
-	const configResponse = await fetch("/api/config");
-	setConfig(await configResponse.json());
+export const load: LayoutLoad = async ({ fetch, url }) => {
+	if (!browser) return;
+
+	// First run on native (no instance chosen yet): show the instance-gate screen.
+	if (isNative() && !getInstanceUrl()) {
+		return { needsInstanceGate: true };
+	}
+
+	// show an error if instance isn't reachable
+	let config: ClientConfig;
+	try {
+		const configResponse = await fetch("/api/config", { headers: getHeaders() });
+		if (!configResponse.ok) throw new Error(`config ${configResponse.status}`);
+		config = await parseResponse<ClientConfig>(configResponse);
+	} catch {
+		return { configError: true, offline: browser && !navigator.onLine };
+	}
+	setConfig(config);
 
 	let rawUserSettings: string | null = null;
 	if (browser && window.localStorage) {
@@ -25,4 +45,12 @@ export const load: LayoutLoad = async ({ fetch }) => {
 	}
 
 	updateUserSettings();
+
+	// no Home on native, redirect to map
+	if (isNative()) {
+		const mapPath = getMapPath(config);
+		if (url.pathname === "/" && mapPath !== "/") {
+			throw redirect(307, mapPath);
+		}
+	}
 };

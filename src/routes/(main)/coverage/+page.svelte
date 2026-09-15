@@ -3,7 +3,6 @@
 	import MapCoverage from "@/components/map/MapCoverage.svelte";
 	import { closeMenu, Menu, openMenu } from "@/lib/ui/menus.svelte.js";
 	import Fabs from "@/components/ui/fab/Fabs.svelte";
-	import { setIsContextMenuOpen } from "@/lib/ui/contextmenu.svelte.js";
 	import { isWebglSupported } from "@/lib/map/utils";
 	import {
 		coverageMapActiveSnapPoint,
@@ -14,7 +13,7 @@
 	import { onDestroy, onMount, tick } from "svelte";
 	import { closePopup } from "@/lib/mapObjects/interact";
 	import MapMenuUi from "@/components/ui/MapMenuUi.svelte";
-	import type maplibre from "maplibre-gl";
+	import type * as maplibre from "maplibre-gl";
 	import { fly } from "svelte/transition";
 	import CoverageMapTitle from "@/components/menus/coverageMap/CoverageMapTitle.svelte";
 	import { isMenuSidebar, isUiLeft } from "@/lib/utils/device";
@@ -25,20 +24,19 @@
 	import { useMetadata } from "@/lib/ui/metadata.svelte";
 
 	let map: maplibre.Map | undefined = $state(undefined);
-	openMenu(Menu.COVERAGE_MAP);
+	openMenu(Menu.COVERAGE_MAP, false);
 	useMetadata(() => ({ title: m.nav_coveragemap() }));
 
 	onMount(async () => {
 		await tick();
 		setMap(undefined);
-		openMenu(Menu.COVERAGE_MAP);
+		openMenu(Menu.COVERAGE_MAP, false);
 		closePopup();
-		setIsContextMenuOpen(false);
 		clearMapPositionUrlParams();
 	});
 
 	onDestroy(() => {
-		closeMenu();
+		closeMenu({ history: false });
 	});
 </script>
 
@@ -50,7 +48,9 @@
 			<!--			<DesktopMenu />-->
 		{/snippet}
 		{#snippet desktopRight()}
-			<Fabs {map} searchMode="coverage" />
+			<div class="mb-2">
+				<Fabs {map} searchMode="coverage" />
+			</div>
 			<div class="px-2 -mt-2">
 				<CoverageMapPopup />
 			</div>
@@ -73,13 +73,19 @@
 					<CoverageMapPopup />
 				</div>
 
-				<div style:height="calc({coverageMapSnapPoints[0]} - 8px)"></div>
+				<!-- bit hacky to ensure good styling on native builds -->
+				<div
+					style:height="calc({coverageMapSnapPoints[0]} - 8px - env(safe-area-inset-bottom))"
+				></div>
 			{/if}
 		{/snippet}
 
 		{#snippet mobileTop()}
 			{#if showCoverageMapTitle()}
-				<div class="fixed top-2 z-20 w-full px-2" transition:fly={{ duration: 90, y: -14 }}>
+				<div
+					class="fixed top-safe-inset-top z-20 w-full px-2"
+					transition:fly={{ duration: 90, y: -14 }}
+				>
 					<CoverageMapTitle />
 				</div>
 			{/if}

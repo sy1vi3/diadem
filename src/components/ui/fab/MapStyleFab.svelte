@@ -1,6 +1,6 @@
 <script lang="ts">
 	import BaseFab from "@/components/ui/fab/BaseFab.svelte";
-	import { Layers2 } from "lucide-svelte";
+	import { Layers2 } from "@lucide/svelte";
 	import { getConfig } from "@/lib/services/config/config";
 	import { MapLibre } from "svelte-maplibre";
 	import { getMapStyle } from "@/lib/utils/mapStyle";
@@ -10,7 +10,6 @@
 	import SelectGroupItem from "@/components/ui/input/selectgroup/SelectGroupItem.svelte";
 	import RadioGroup from "@/components/ui/input/selectgroup/RadioGroup.svelte";
 	import { setWayfarerStyle } from "@/lib/features/wayfarerMap.svelte";
-	import maplibre from "maplibre-gl";
 	import type { MapStyle } from "@/lib/services/config/configTypes";
 	import * as m from "@/lib/paraglide/messages";
 

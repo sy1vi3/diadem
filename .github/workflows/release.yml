@@ -1,0 +1,401 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version name: blank = auto-bump last number"
+        required: false
+        type: string
+      draft_release_id:
+        description: "Draft release id: blank = newest draft release"
+        required: false
+        type: string
+      play_track:
+        description: "Google Play track"
+        required: false
+        default: internal
+        type: choice
+        options: [internal, alpha, beta, production]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      version_code: ${{ steps.ver.outputs.version_code }}
+      ios: ${{ steps.flags.outputs.ios }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare default config files
+        run: bash setup.sh
+
+      - name: Detect optional targets
+        id: flags
+        env:
+          PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          DISCORD: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ASC_KEY: ${{ secrets.ASC_API_KEY }}
+        run: |
+          [ -n "$PLAY" ] && echo "play=true" >> "$GITHUB_OUTPUT" || echo "play=false" >> "$GITHUB_OUTPUT"
+          [ -n "$DISCORD" ] && echo "discord=true" >> "$GITHUB_OUTPUT" || echo "discord=false" >> "$GITHUB_OUTPUT"
+          [ -n "$ASC_KEY" ] && echo "ios=true" >> "$GITHUB_OUTPUT" || echo "ios=false" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: node scripts/release/set-version.mjs "$INPUT_VERSION"
+
+      - name: Resolve changelog
+        id: changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_DRAFT_RELEASE_ID: ${{ inputs.draft_release_id }}
+        run: |
+          if [ -n "$INPUT_DRAFT_RELEASE_ID" ]; then
+            release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${INPUT_DRAFT_RELEASE_ID}")"
+            source="draft release ${INPUT_DRAFT_RELEASE_ID}"
+          else
+            release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --jq 'map(select(.draft)) | sort_by(.updated_at) | last // {}')"
+            draft_id="$(jq -r '.id // ""' <<< "$release_json")"
+            source="draft release ${draft_id}"
+          fi
+
+          changelog="$(jq -r '.body // ""' <<< "$release_json")"
+
+          if [ -z "$changelog" ]; then
+            echo "No non-empty draft release body found" >&2
+            exit 1
+          fi
+
+          printf '%s\n' "$changelog" | node scripts/release/resolve-changelog.mjs "$source"
+
+          echo "Using changelog from $source"
+
+      - name: Summary
+        run: |
+          echo "### Diadem release" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Previous: \`${{ steps.ver.outputs.old_version }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- New: \`${{ steps.ver.outputs.version }}\` (versionCode ${{ steps.ver.outputs.version_code }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Changelog: ${{ steps.changelog.outputs.source }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- App-store changelog section: ${{ steps.changelog.outputs.has_store_section }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write fastlane changelog
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.store_body }}
+          CODE: ${{ steps.ver.outputs.version_code }}
+        run: |
+          mkdir -p fastlane/metadata/android/en-US/changelogs
+          printf '%s\n' "$CHANGELOG" > "fastlane/metadata/android/en-US/changelogs/${CODE}.txt"
+
+      - name: Prepare Play changelog
+        env:
+          CODE: ${{ steps.ver.outputs.version_code }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/whatsnew"
+          cp "fastlane/metadata/android/en-US/changelogs/${CODE}.txt" "$RUNNER_TEMP/whatsnew/whatsnew-en-US"
+
+      - name: Sync SvelteKit
+        run: pnpm exec svelte-kit sync
+
+      - name: Build web client
+        run: BUILD_TARGET=native pnpm build
+
+      - name: Capacitor sync
+        run: pnpm exec cap sync android
+
+      - name: Decode signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/upload-keystore.jks
+          cat > android/keystore.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=${STORE_PW}
+          keyAlias=${ALIAS}
+          keyPassword=${KEY_PW}
+          EOF
+
+      - name: Build signed APK + AAB
+        run: ./gradlew assembleRelease bundleRelease
+        working-directory: android
+
+      - name: Stage artifacts
+        id: art
+        env:
+          V: ${{ steps.ver.outputs.version }}
+        run: |
+          apk="diadem-${V}.apk"
+          aab="diadem-${V}.aab"
+          cp android/app/build/outputs/apk/release/app-release.apk "$apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$aab"
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          echo "aab=$aab" >> "$GITHUB_OUTPUT"
+
+      - name: Build no-GMS APK
+        id: nogms
+        env:
+          V: ${{ steps.ver.outputs.version }}
+        run: |
+          pnpm run native:android:nogms
+          (cd android && ./gradlew assembleRelease)
+          apk="diadem-${V}-no-gms.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$apk"
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump + changelog and tag
+        env:
+          V: ${{ steps.ver.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/app/build.gradle package.json fastlane ios/App/App.xcodeproj/project.pbxproj
+          git commit -m "release: v${V}"
+          git tag "v${V}"
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin "v${V}"
+
+      - name: Create GitHub release
+        id: gh
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: 🌠 Diadem v${{ steps.ver.outputs.version }}
+          body: |
+            ## Changelog
+
+            ${{ steps.changelog.outputs.public_body }}
+
+            ## Installation
+
+            Find update instructions in [the docs](https://diadem.malt.ee/guides/installation/#updating)
+
+            ### Android App
+
+            - Download on [Google Play](https://play.google.com/store/apps/details?id=ee.malt.diadem)
+            - Download on [F-Droid](https://f-droid.org/packages/ee.malt.diadem/)
+            - Download the APK on [GitHub](https://github.com/ccev/diadem/releases/download/v${{ steps.ver.outputs.version }}/diadem-${{ steps.ver.outputs.version }}.apk)
+          files: |
+            ${{ steps.art.outputs.apk }}
+            ${{ steps.nogms.outputs.apk }}
+
+      - name: Upload to Google Play
+        if: steps.flags.outputs.play == 'true'
+        continue-on-error: true
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ee.malt.diadem
+          releaseFiles: ${{ steps.art.outputs.aab }}
+          track: ${{ inputs.play_track }}
+          status: completed
+          whatsNewDirectory: ${{ runner.temp }}/whatsnew
+
+      - name: Notify Discord
+        if: steps.flags.outputs.discord == 'true'
+        continue-on-error: true
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          V: ${{ steps.ver.outputs.version }}
+          CHANGELOG: ${{ steps.changelog.outputs.public_body }}
+          GH_URL: ${{ steps.gh.outputs.url }}
+        run: |
+          if [[ "$WEBHOOK" == *\?* ]]; then
+            WEBHOOK_WITH_COMPONENTS="${WEBHOOK}&with_components=true"
+          else
+            WEBHOOK_WITH_COMPONENTS="${WEBHOOK}?with_components=true"
+          fi
+
+          body="$(cat <<EOF
+          # 🌠 Diadem v${V}
+
+          ## Changelog
+
+          ${CHANGELOG}
+
+          ## Installation
+
+          Find update instructions in [the docs](<https://diadem.malt.ee/guides/installation/#updating>)
+
+          ### Android App
+
+          - Download on [Google Play](<https://play.google.com/store/apps/details?id=ee.malt.diadem>)
+          - Download on [F-Droid](<https://f-droid.org/packages/ee.malt.diadem/>)
+          - Download the APK on [GitHub](<https://github.com/ccev/diadem/releases/download/v${V}/diadem-${V}.apk>)
+          EOF
+          )"
+          if ((${#body} > 1900)); then
+            body="${body:0:1900}"$'\n\n...'
+          fi
+          jq -nc \
+            --arg content "$body" \
+            --arg gh "$GH_URL" \
+            '{
+              content: $content,
+              components: [{
+                type: 1,
+                components: [{
+                  type: 2,
+                  style: 5,
+                  label: "GitHub Release",
+                  url: $gh
+                }]
+              }]
+            }' > payload.json
+          curl -fsS -H "Content-Type: application/json" -d @payload.json "$WEBHOOK_WITH_COMPONENTS"
+
+  # Required secrets (the job is skipped entirely if ASC_API_KEY is unset):
+  #   ASC_API_KEY     — contents of the App Store Connect API key .p8 file
+  #   ASC_KEY_ID      — that key's ID
+  #   ASC_ISSUER_ID   — the API key issuer ID
+  #   IOS_TEAM_ID     — Apple Developer team ID (e.g. LPDWSHTK9L)
+  # One-time: create the app in App Store Connect with bundle id ee.malt.diadem and
+  # do one manual TestFlight upload first (the API can't create the app).
+  ios:
+    needs: release
+    if: needs.release.outputs.ios == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare default config files
+        run: bash setup.sh
+
+      - name: Sync SvelteKit
+        run: pnpm exec svelte-kit sync
+
+      - name: Build web client
+        run: BUILD_TARGET=native pnpm build
+
+      - name: Capacitor sync (iOS — also runs pod install)
+        run: pnpm exec cap sync ios
+
+      - name: Write App Store Connect API key
+        id: asc
+        env:
+          ASC_API_KEY: ${{ secrets.ASC_API_KEY }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          dir="$RUNNER_TEMP/private_keys"
+          mkdir -p "$dir"
+          key="$dir/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_API_KEY" > "$key"
+          echo "key_path=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Archive
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          KEY_PATH: ${{ steps.asc.outputs.key_path }}
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            archive
+
+      - name: Export IPA
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          KEY_PATH: ${{ steps.asc.outputs.key_path }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>destination</key><string>export</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Stage IPA
+        id: ipa
+        env:
+          V: ${{ needs.release.outputs.version }}
+        run: |
+          ipa="diadem-${V}.ipa"
+          cp "$RUNNER_TEMP/export/App.ipa" "$ipa"
+          echo "ipa=$ipa" >> "$GITHUB_OUTPUT"
+
+      - name: Attach IPA to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.release.outputs.version }}
+          append_body: true
+          body: |
+
+            ### iOS App
+
+            - Download the IPA on [GitHub](https://github.com/ccev/diadem/releases/download/v${{ needs.release.outputs.version }}/${{ steps.ipa.outputs.ipa }})
+          files: ${{ steps.ipa.outputs.ipa }}
+          # TODO: add download link if available on app store
+
+      - name: Upload to TestFlight
+        uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-path: ${{ runner.temp }}/export/App.ipa
+          issuer-id: ${{ secrets.ASC_ISSUER_ID }}
+          api-key-id: ${{ secrets.ASC_KEY_ID }}
+          api-private-key: ${{ secrets.ASC_API_KEY }}

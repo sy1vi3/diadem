@@ -1,14 +1,14 @@
-import { json } from "@sveltejs/kit";
+import { respond } from "@/lib/server/api/respond";
 import { getServerConfig } from "@/lib/services/config/config.server";
 import { isAuthEnabled, isAuthRequired } from "@/lib/server/auth/betterAuth";
 import type { SupportedFeatures } from "@/lib/services/supportedFeatures";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async ({ locals }) => {
+export const GET: RequestHandler = async ({ locals, request }) => {
 	const config = getServerConfig();
 	const authRequired = isAuthRequired();
 
-	return json({
+	return respond(request, {
 		koji: !!config.koji && !!config.koji.url,
 		geocoding:
 			(!!config.nominatim && !!config.nominatim.url) ||

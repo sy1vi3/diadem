@@ -1,4 +1,4 @@
-import { type MapData, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
+import { ClientMapObjectType, type MapData, MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import * as m from "@/lib/paraglide/messages";
 import { mCharacter, mItem, mPokemon, mQuest, mRaid } from "@/lib/services/ingameLocale";
 import type { GymData } from "@/lib/types/mapObjectData/gym";
@@ -36,10 +36,11 @@ import {
 	isIncidentKecleon,
 	KECLEON_ID
 } from "@/lib/utils/pokestopUtils";
-import { getStationTitle } from "@/lib/utils/stationUtils";
+import { getStationTitle, isMaxBattleActive } from "@/lib/utils/stationUtils";
 import { getTappableName } from "@/lib/utils/tappableUtils";
 import { getMmSsFromSeconds } from "@/lib/utils/time";
 import { timestampToLocalTime } from "@/lib/utils/timestampToLocalTime";
+import { formattedCoordinates } from "$lib/features/location.svelte";
 
 // unused; was replaced by thumbnails
 export function getShareText(data: MapData): string {
@@ -70,11 +71,13 @@ export function getShareText(data: MapData): string {
 export function getShareTitle(data: MapData | null | undefined) {
 	if (!data) return "";
 
-	if (data.type === MapObjectType.POKEMON) {
+	if (data.type === ClientMapObjectType.LOCATION) {
+		return data.address ?? formattedCoordinates(data);
+	} else if (data.type === MapObjectType.POKEMON) {
 		return mPokemon(data);
 	} else if (data.type === MapObjectType.STATION) {
 		let title = "";
-		if (data.battle_pokemon_id) {
+		if (data.battle_pokemon_id && isMaxBattleActive(data)) {
 			title = m.pogo_max_battle();
 		} else {
 			title = m.pogo_station();
@@ -90,7 +93,7 @@ export function getShareTitle(data: MapData | null | undefined) {
 	} else if (data.type === MapObjectType.SPAWNPOINT) {
 		return m.pogo_spawnpoint();
 	} else if (data.type === MapObjectType.ROUTE) {
-		// TODO: route share title
+		return data.name || m.pogo_route();
 	} else if (data.type === MapObjectType.TAPPABLE) {
 		return getTappableName(data) + ` (${m.pogo_tappable()})`;
 	}
@@ -156,7 +159,7 @@ function getPokestopShareText(data: PokestopData) {
 		if (!incident.id || incident.expiration < currentTimestamp()) return;
 
 		if (isIncidentInvasion(incident)) {
-			invasionText += `🥷 ${mCharacter(incident.character)} (${timestampToLocalTime(incident.expiration, true)})\n`;
+			invasionText += `🥷 ${mCharacter(incident.character)} (${timestampToLocalTime(incident.expiration, { showDate: true })})\n`;
 		} else if (isIncidentKecleon(incident)) {
 			kecleonText += `🦎 ${mPokemon({ pokemon_id: KECLEON_ID })} (${timestampToLocalTime(incident.expiration)})\n`;
 		} else if (
@@ -164,7 +167,7 @@ function getPokestopShareText(data: PokestopData) {
 			data.showcase_ranking_standard &&
 			data.contest_focus
 		) {
-			contestText += `🏅 ${getContestText(data.showcase_ranking_standard, data.contest_focus)} (${timestampToLocalTime(incident.expiration, true)})\n`;
+			contestText += `🏅 ${getContestText(data.showcase_ranking_standard, data.contest_focus)} (${timestampToLocalTime(incident.expiration, { showDate: true })})\n`;
 		}
 	});
 
@@ -198,14 +201,14 @@ function getGymShareText(data: GymData) {
 function getStationShareText(data: StationData) {
 	let text = "";
 
-	if (data.battle_pokemon_id) {
+	if (data.battle_pokemon_id && isMaxBattleActive(data)) {
 		text += `📍 ${m.pogo_station()}: ${data.name}\n`;
 	}
-	if (data.start_time) {
-		text += `🕜 ${m.start()}: ${timestampToLocalTime(data.start_time, true)}\n`;
+	if (data.start_time && isMaxBattleActive(data)) {
+		text += `🕜 ${m.start()}: ${timestampToLocalTime(data.start_time, { showDate: true })}\n`;
 	}
-	if (data.end_time) {
-		text += `🕜 ${m.end()}: ${timestampToLocalTime(data.end_time, true)}\n`;
+	if (data.end_time && isMaxBattleActive(data)) {
+		text += `🕜 ${m.end()}: ${timestampToLocalTime(data.end_time, { showDate: true })}\n`;
 	}
 
 	return text;
@@ -235,15 +238,13 @@ function getSpawnpointShareText(data: SpawnpointData) {
 }
 
 function getRouteShareText(data: RouteData) {
-	let text = "";
-
-	return text;
+	return data.description;
 }
 
 function getTappableShareText(data: TappableData) {
 	let text = "";
 
-	text += `🕜 ${m.popup_despawns()}: ${timestampToLocalTime(data.expire_timestamp, true)}\n`;
+	text += `🕜 ${m.popup_despawns()}: ${timestampToLocalTime(data.expire_timestamp, { showDate: true })}\n`;
 
 	if (!hasTimer(data)) {
 		text += `⚠️ ${m.time_is_estimated()}\n`;

@@ -10,7 +10,7 @@ This guide walks through the baseline install for a Diadem instance.
 
 ## Prerequisites
 
-- Node.js 22+
+- Node.js 24+
 - [pnpm](https://pnpm.io/installation)
 - Running [Unown# Stack](https://unownhash.com)
 
@@ -55,6 +55,13 @@ This guide walks through the baseline install for a Diadem instance.
 		PORT=3900 HOST=127.0.0.1 FORCE_COLOR=1 pm2 start build/index.js -n "diadem"
 		```
 
+		For multi-core production servers, run the cluster entrypoint instead. `DIADEM_WORKERS=auto`
+		starts one worker per available CPU core; you can also set a fixed number such as `DIADEM_WORKERS=4`.
+
+		```bash
+		PORT=3900 HOST=127.0.0.1 FORCE_COLOR=1 DIADEM_WORKERS=auto node cluster.mjs
+		```
+
 	6. Reverse Proxy (optional)
 
 		For production use, it's probably a good idea to set up Diadem behind a reverse proxy. Here's a
@@ -68,16 +75,59 @@ This guide walks through the baseline install for a Diadem instance.
 		```
 </Steps>
 
+## Running With systemd
+
+For a `systemd` deployment, point `ExecStart` at the cluster entrypoint to distribute requests
+across CPU cores while keeping a single service and port.
+
+```ini
+[Unit]
+Description=Diadem
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/diadem
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3900
+Environment=FORCE_COLOR=1
+Environment=DIADEM_WORKERS=auto
+ExecStart=/usr/bin/node cluster.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+After changing the unit, reload and restart it:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart diadem
+```
+
+Cluster mode starts multiple Diadem processes. Each worker has its own in-memory caches, rate
+limit counters, and MySQL pools. If strict rate limits matter, account for the worker count or use
+one worker until rate limiting is backed by shared storage.
+
 ## Updating
 
 <Steps>
-	1. Install dependencies and build
+	1. Pull the latest changes
+
+		```bash
+		git pull
+		```
+
+	2. Install dependencies and build
 
 		```bash
 		pnpm install
 		pnpm run build
 		```
-	2. Restart
+	3. Restart
 		```bash
 		pm2 restart diadem
 		```
@@ -86,26 +136,44 @@ This guide walks through the baseline install for a Diadem instance.
 
 ## Docker quick start
 
-For containerized setup:
+For containerized setup using the published `ghcr.io/ccev/diadem:latest` image:
 
 ```bash
 cp config/config.example.toml config/config.toml
 cp docker-compose.example.yml docker-compose.yml
-docker compose up --build
+docker compose pull
+docker compose up -d
 ```
 
 Then edit `config/config.toml` to point to the correct DB and API hosts for your environment.
 
-### Dev mode (debugging)
-
-By default the container runs the optimized production build. To debug an issue with
-readable, unminified code and source maps in your browser devtools, set `DIADEM_TARGET=dev`
-in your `.env` and rebuild:
+To update an existing Docker install:
 
 ```bash
+docker compose pull
+docker compose up -d
+```
+
+### Dev mode (debugging)
+
+By default Docker uses the optimized published image. To debug an issue with readable,
+unminified code and source maps in your browser devtools, build the local `dev` target
+with a compose override:
+
+```bash
+cat > docker-compose.override.yml <<'EOF'
+services:
+  diadem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    image: diadem:dev
+EOF
 echo "DIADEM_TARGET=dev" >> .env
 docker compose up -d --build
 ```
 
 This runs the Vite dev server (with its error overlay) instead of `node build/index.js`.
-Set it back to `runtime` (or remove the line) and rebuild to return to production mode.
+Remove `docker-compose.override.yml`, set `DIADEM_TARGET=runtime` (or remove the line),
+and run `docker compose pull && docker compose up -d` to return to the published image.

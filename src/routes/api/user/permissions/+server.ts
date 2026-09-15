@@ -1,7 +1,8 @@
-import { json } from "@sveltejs/kit";
+import { respond } from "@/lib/server/api/respond";
+import { removeRedundantPermissionAreas } from "@/lib/utils/features";
 
-export async function GET({ locals }) {
-	return json({
-		permissions: locals.perms
+export async function GET({ locals, request }) {
+	return respond(request, {
+		permissions: removeRedundantPermissionAreas(locals.perms)
 	});
 }

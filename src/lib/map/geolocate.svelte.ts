@@ -1,9 +1,10 @@
 import { getMap } from "@/lib/map/map.svelte";
+import { isNative } from "@/lib/native/runtime";
 import * as m from "@/lib/paraglide/messages";
 import { openToast } from "@/lib/ui/toasts.svelte.js";
 import { round } from "@/lib/utils/numberFormat";
 import { distance } from "@turf/turf";
-import maplibre from "maplibre-gl";
+import type * as maplibre from "maplibre-gl";
 
 type Location = {
 	lat: number;
@@ -119,8 +120,8 @@ function flyToLocation(map: maplibre.Map, location: Location) {
 		zoom = maxZoom;
 	}
 
-	map.once("moveend", (e: { data?: string }) => {
-		if (e.data === "locate") {
+	map.once("moveend", (event) => {
+		if ((event as typeof event & { data?: string }).data === "locate") {
 			shouldUpdateCamera = true;
 		}
 	});
@@ -246,6 +247,41 @@ export function updateLocation(map: maplibre.Map | undefined, allowFollow: boole
 		return;
 	}
 
+	if (isNative()) {
+		void nativeLocationHandler(map, allowFollow);
+		return;
+	}
+
+	beginLocate(map, allowFollow);
+}
+
+async function nativeLocationHandler(map: maplibre.Map | undefined, allowFollow: boolean) {
+	// no-gms builds should use the web api
+	if (import.meta.env.VITE_NO_GMS) {
+		beginLocate(map, allowFollow);
+		return;
+	}
+	try {
+		const { Geolocation } = await import("@capacitor/geolocation");
+		let status = await Geolocation.checkPermissions();
+		if (status.location !== "granted" && status.coarseLocation !== "granted") {
+			status = await Geolocation.requestPermissions();
+		}
+		const granted = status.location === "granted" || status.coarseLocation === "granted";
+		if (granted) {
+			beginLocate(map, allowFollow);
+		} else {
+			geolocationEnabled = false;
+			openToast(m.locate_error_perms());
+		}
+	} catch (e) {
+		console.error("Failed to request native location permission", e);
+		geolocationEnabled = false;
+		openToast(m.locate_error_support());
+	}
+}
+
+function beginLocate(map: maplibre.Map | undefined, allowFollow: boolean) {
 	if (!navigator.geolocation) {
 		geolocationEnabled = false;
 		openToast(m.locate_error_support());

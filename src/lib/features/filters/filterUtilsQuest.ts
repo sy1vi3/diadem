@@ -18,7 +18,11 @@ import { getId } from "@/lib/utils/uuid";
 export const questBounds = {
 	stardust: {
 		min: 0,
-		max: 5_000
+		max: 10_000
+	},
+	pokecoins: {
+		min: 0,
+		max: 10
 	},
 	xp: {
 		min: 0,
@@ -34,6 +38,10 @@ type PremadeQuestReward = Extract<QuestReward, { type: RewardType.ITEM | RewardT
 
 export function getAttributeLabelStardust(stardust: MinMax | undefined) {
 	return makeAttributeRangeLabel(stardust, questBounds.stardust.min, questBounds.stardust.max);
+}
+
+export function getAttributeLabelPokecoins(pokecoins: MinMax | undefined) {
+	return makeAttributeRangeLabel(pokecoins, questBounds.pokecoins.min, questBounds.pokecoins.max);
 }
 
 export function getAttributeLabelXp(xp: MinMax | undefined) {
@@ -105,6 +113,13 @@ export function generateQuestFilterDetails(filter: FiltersetQuest) {
 		parts.push(m.count_stardust({ count: getAttributeLabelStardust(filter.stardust) }));
 		setIconOnce({
 			uicon: { category: IconCategory.MISC, params: { misc_type: "stardust" } }
+		});
+	}
+
+	if (filter.pokecoins) {
+		parts.push(m.count_pokecoins({ count: getAttributeLabelPokecoins(filter.pokecoins) }));
+		setIconOnce({
+			uicon: { category: IconCategory.MISC, params: { misc_type: "pokecoin" } }
 		});
 	}
 

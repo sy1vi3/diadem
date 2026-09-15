@@ -9,10 +9,12 @@ import type {
 	ContestFocus,
 	Incident,
 	PokestopData,
+	QuestData,
 	QuestReward
 } from "@/lib/types/mapObjectData/pokestop";
 import { currentTimestamp } from "@/lib/utils/currentTimestamp";
 import { getNormalizedForm } from "@/lib/utils/pokemonUtils";
+import type { PokemonVisual } from "$lib/types/mapObjectData/pokemon";
 
 export const CONTEST_SLOTS = 200;
 export const INCIDENT_DISPLAY_GOLD = 7;
@@ -20,8 +22,16 @@ export const INCIDENT_DISPLAY_KECLEON = 8;
 export const INCIDENT_DISPLAY_CONTEST = 9;
 export const INCIDENT_DISPLAYS_INVASION = [1, 2, 3];
 export const INVASION_CHARACTER_LEADERS = [41, 42, 43, 44, 46];
-export const INVASION_CHARACTER_NOTYPES = [4, 5];
 export const KECLEON_ID = 352;
+export const ALL_LURE_IDS = [501, 502, 503, 504, 505, 506];
+
+export enum Character {
+	GRUNT_MALE = 4,
+	GRUNT_FEMALE = 5,
+	GIOVANNI = 44,
+	DECOY_MALE = 45,
+	DECOY_FEMALE = 46
+}
 
 export enum RewardType {
 	XP = 1,
@@ -39,7 +49,11 @@ export enum RewardType {
 	INCIDENT = 13,
 	PLAYER_ATTRIBUTE = 14,
 	EVENT_BADGE = 15,
-	POKEMON_EGG = 16
+	POKEMON_EGG = 16,
+	POKEMON_INDIVIDUAL_STAT = 17,
+	LOOT_TABLE = 18,
+	FRIENDSHIP_POINTS = 19,
+	TEMP_EVO_BRANCH_RESOURCE = 20
 }
 
 export function parseQuestReward(reward?: string | null) {
@@ -112,6 +126,7 @@ const CONTEST_FIELDS = [
 	"showcase_pokemon_form_id",
 	"showcase_focus",
 	"contest_focus",
+	"contest_rankings",
 	"showcase_pokemon_type_id",
 	"showcase_ranking_standard",
 	"showcase_expiry",
@@ -142,6 +157,9 @@ export function getRewardText(reward: QuestReward) {
 		case RewardType.STARDUST:
 			if (!reward.info.amount) return m.stardust();
 			return m.quest_stardust({ count: reward.info.amount });
+		case RewardType.POKECOINS:
+			if (!reward.info.amount) return m.reward_pokecoins();
+			return m.quest_pokecoins({ count: reward.info.amount });
 		case RewardType.CANDY:
 			if (!reward.info.amount) return m.pokemon_candy({ pokemon: mPokemon(reward.info) });
 			return m.quest_candy({ count: reward.info.amount, pokemon: mPokemon(reward.info) });
@@ -158,6 +176,20 @@ export function getRewardText(reward: QuestReward) {
 			return m.quest_mega_resource({
 				count: reward.info.amount,
 				pokemon: mPokemon(reward.info)
+			});
+		case RewardType.TEMP_EVO_BRANCH_RESOURCE:
+			if (!reward.info.pokemon_id) return m.mega_energy();
+			const pokemon: PokemonVisual = {
+				pokemon_id: reward.info.pokemon_id,
+				form: 0,
+				temp_evolution_id: reward.info.temp_evolution
+			};
+
+			if (!reward.info.amount) return m.pokemon_mega_resource({ pokemon: mPokemon(pokemon) });
+
+			return m.quest_mega_resource({
+				count: reward.info.amount,
+				pokemon: mPokemon(pokemon)
 			});
 		default:
 			return rewardTypeLabel(reward.type);
@@ -198,6 +230,8 @@ export function rewardTypeLabel(rewardType: RewardType) {
 			return m.reward_event_badge();
 		case RewardType.POKEMON_EGG:
 			return m.reward_egg();
+		case RewardType.TEMP_EVO_BRANCH_RESOURCE:
+			return m.mega_energy();
 		default:
 			return "";
 	}
@@ -284,4 +318,12 @@ export function getActivePokestopFilter() {
 		return activeSearch.filter as FilterPokestop;
 	}
 	return getUserSettings().filters.pokestop;
+}
+
+export function givesQuestBackground(quest: QuestData) {
+	return Boolean(
+		("background" in quest.reward.info && quest.reward.info.background) ||
+		quest.template?.endsWith("_sb") ||
+		quest.template?.endsWith("_specialbackground")
+	);
 }

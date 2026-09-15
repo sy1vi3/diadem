@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { m } from "@/lib/paraglide/messages";
 	import Fabs from "@/components/ui/fab/Fabs.svelte";
-	import { setIsContextMenuOpen } from "@/lib/ui/contextmenu.svelte.js";
 	import { isWebglSupported } from "@/lib/map/utils";
 	import ErrorPageWebGl from "@/components/ui/ErrorPageWebGl.svelte";
 	import { onMount, tick } from "svelte";
 	import MapMenuUi from "@/components/ui/MapMenuUi.svelte";
-	import type maplibre from "maplibre-gl";
+	import type * as maplibre from "maplibre-gl";
 	import { fly } from "svelte/transition";
 	import { clearMapPositionUrlParams } from "$lib/map/mapPositionParams.svelte";
 	import { useMetadata } from "@/lib/ui/metadata.svelte";
@@ -15,6 +14,7 @@
 	import WayfarerCellPopup from "@/components/menus/wayfarer/WayfarerCellPopup.svelte";
 	import WayfarerTitle from "@/components/menus/wayfarer/WayfarerTitle.svelte";
 	import { getWayfarerStyleId, setWayfarerStyle } from "@/lib/features/wayfarerMap.svelte";
+	import { closePopup } from "$lib/mapObjects/interact";
 
 	let map: maplibre.Map | undefined = $state(undefined);
 
@@ -22,7 +22,7 @@
 
 	onMount(async () => {
 		await tick();
-		setIsContextMenuOpen(false);
+		closePopup();
 		clearMapPositionUrlParams();
 	});
 </script>
@@ -59,7 +59,7 @@
 	</MapMenuUi>
 
 	<div
-		class="fixed top-2 left-0 right-0 z-20 px-2 max-w-md"
+		class="fixed top-safe-inset-top left-0 right-0 z-20 px-2 max-w-md"
 		transition:fly={{ duration: 90, y: -14 }}
 	>
 		<WayfarerTitle />

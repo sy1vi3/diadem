@@ -19,7 +19,7 @@
 	} = $props();
 </script>
 
-<div class="w-full h-screen flex items-center justify-center">
+<div class="w-full h-svh! h-screen flex items-center justify-center">
 	<div class="stars absolute w-full h-full">
 		<div class="absolute w-full h-full bg-radial from-transparent to-background to-60%"></div>
 	</div>
@@ -35,7 +35,7 @@
 			</p>
 		{/if}
 
-		<div class="mt-4 flex justify-center w-full gap-2">
+		<div class="mt-4 flex justify-center flex-wrap w-full gap-2 *:flex-1">
 			{#if href && linkLabel}
 				<Button variant={extraButtons ? "secondary" : "default"} tag="a" {href}>
 					{linkLabel}

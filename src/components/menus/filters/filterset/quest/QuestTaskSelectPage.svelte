@@ -35,6 +35,7 @@
 			data.candy ||
 			data.xlCandy ||
 			data.stardust ||
+			data.pokecoins ||
 			data.xp
 		);
 	}
@@ -60,7 +61,11 @@
 			)
 				return true;
 		}
-		if (data.megaResource && reward.type === RewardType.MEGA_ENERGY) {
+		if (
+			data.megaResource &&
+			(reward.type === RewardType.MEGA_ENERGY ||
+				reward.type === RewardType.TEMP_EVO_BRANCH_RESOURCE)
+		) {
 			if (
 				data.megaResource.some(
 					(i) =>
@@ -92,6 +97,10 @@
 		}
 		if (data.stardust && reward.type === RewardType.STARDUST) {
 			if (reward.info.amount >= data.stardust.min && reward.info.amount <= data.stardust.max)
+				return true;
+		}
+		if (data.pokecoins && reward.type === RewardType.POKECOINS) {
+			if (reward.info.amount >= data.pokecoins.min && reward.info.amount <= data.pokecoins.max)
 				return true;
 		}
 		if (data.xp && reward.type === RewardType.XP) {

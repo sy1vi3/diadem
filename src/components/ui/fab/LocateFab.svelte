@@ -1,6 +1,6 @@
 <script lang="ts">
 	import BaseFab from "@/components/ui/fab/BaseFab.svelte";
-	import { Locate, LocateFixed, LocateOff } from "lucide-svelte";
+	import { Locate, LocateFixed, LocateOff } from "@lucide/svelte";
 	import {
 		updateGeolocationEnabled,
 		updateLocation,
@@ -9,7 +9,7 @@
 		getIsLocateFollowing
 	} from "@/lib/map/geolocate.svelte";
 	import { onMount } from "svelte";
-	import type maplibre from "maplibre-gl";
+	import type * as maplibre from "maplibre-gl";
 
 	let {
 		map,

@@ -1,16 +1,36 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { watch } from "runed";
+	import { page } from "$app/state";
 	import { getIsLoading, load } from "@/lib/services/initialLoad.svelte";
 	import Toast from "@/components/ui/Toast.svelte";
 	import { getIsToastOpen } from "@/lib/ui/toasts.svelte";
 	import Modal from "@/components/ui/modal/Modal.svelte";
 	import { getSelectOptions } from "@/lib/ui/modal.svelte";
 	import Loading from "@/components/ui/Loading.svelte";
+	import FortDetailsModal from "@/components/ui/popups/common/FortDetailsModal.svelte";
+	import { closeTopOverlay, reconcileOverlays } from "@/lib/ui/overlays.svelte";
+	import { syncUserSettings } from "@/lib/services/userSettings.svelte";
 
 	let { data, children } = $props();
 
 	onMount(() => load().then());
+
+	watch(() => page.state, reconcileOverlays);
 </script>
+
+<svelte:window onpagehide={syncUserSettings} />
+
+<svelte:document
+	onvisibilitychange={() => {
+		if (document.visibilityState === "hidden") syncUserSettings();
+	}}
+	onkeydown={(event) => {
+		if (event.key !== "Escape" || !closeTopOverlay()) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}}
+/>
 
 {#if getIsToastOpen()}
 	<Toast />
@@ -30,3 +50,5 @@
 {/if}
 
 {@render children?.()}
+
+<FortDetailsModal />

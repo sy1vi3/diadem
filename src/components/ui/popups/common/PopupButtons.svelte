@@ -9,53 +9,88 @@
 		togglePopupExpanded
 	} from "@/lib/ui/popupActions.js";
 	import {
+		Binoculars,
 		CircleDot,
 		CircleOff,
 		Eye,
 		EyeClosed,
+		Focus,
 		Minus,
 		Navigation,
 		Plus,
 		Timer,
-		TimerOff
-	} from "lucide-svelte";
+		TimerOff,
+		Scan
+	} from "@lucide/svelte";
 	import * as m from "@/lib/paraglide/messages";
 	import { getMapsUrl } from "@/lib/utils/mapUrl";
 	import { Coords } from "@/lib/utils/coordinates";
 	import { getShareTitle } from "@/lib/features/shareTexts";
 	import { getCurrentSelectedData } from "@/lib/mapObjects/currentSelectedState.svelte";
 	import PopupButton from "@/components/ui/popups/common/PopupButton.svelte";
+	import type { MapData } from "$lib/mapObjects/mapObjectTypes";
+	import { ClientMapObjectType, MapObjectType } from "$lib/mapObjects/mapObjectTypes";
+	import { getFocusedRouteMapId, setFocusedRouteMapId } from "$lib/features/focusedRoute.svelte.js";
+	import { refreshRouteFeatures } from "$lib/map/featuresGen.svelte";
+	import { getUserSettings } from "@/lib/services/userSettings.svelte";
+	import { setCurrentScoutCenter, setCurrentScoutCoords } from "$lib/features/scout.svelte";
+	import { getConfig } from "$lib/services/config/config";
+	import { hasFeatureAnywhere } from "$lib/services/user/checkPerm";
+	import { getUserDetails } from "$lib/services/user/userDetails.svelte";
+	import { Menu, openMenu } from "$lib/ui/menus.svelte";
+	import { Features } from "$lib/utils/features";
 
 	let {
 		lat,
-		lon
+		lon,
+		data
 	}: {
 		lat: number;
 		lon: number;
+		data: MapData;
 	} = $props();
 
-	let selectedData = $derived(getCurrentSelectedData());
-	let selectedType = $derived(selectedData?.type);
-	let selectedMapId = $derived(selectedData?.mapId);
+	let selectedType = $derived(data.type === ClientMapObjectType.LOCATION ? undefined : data.type);
+	let selectedMapId = $derived(data?.mapId);
+	let routeFocused = $derived(
+		selectedType === MapObjectType.ROUTE && getFocusedRouteMapId() === selectedMapId
+	);
 </script>
 
-<div class="flex px-4 gap-1.5 w-full overflow-x-auto pb-4">
+<div class="flex px-4 gap-2 w-full overflow-x-auto pb-2">
 	<PopupButton
 		variant="default"
-		Icon={Plus}
-		label={m.popup_show_details()}
-		IconActive={Minus}
-		labelActive={m.popup_hide_details()}
-		active={isPopupExpanded(selectedType)}
-		onclick={() => togglePopupExpanded(selectedType)}
-	/>
-	<PopupButton
 		Icon={Navigation}
 		label={m.popup_navigate()}
 		tag="a"
 		href={getMapsUrl(new Coords(lat, lon), getShareTitle(getCurrentSelectedData()))}
 		target="_blank"
 	/>
+	{#if data.type === ClientMapObjectType.LOCATION && getConfig().tools.scout && hasFeatureAnywhere(getUserDetails().permissions, Features.SCOUT)}
+		<PopupButton
+			Icon={Binoculars}
+			label={m.scout_location()}
+			onclick={() => {
+				const coords = new Coords(lat, lon);
+				setCurrentScoutCoords([coords]);
+				setCurrentScoutCenter(coords);
+				openMenu(Menu.SCOUT);
+			}}
+		/>
+	{/if}
+	{#if supportsPopupAction(selectedType, PopupAction.FOCUS_ROUTE) && getUserSettings().filters.route.enabled}
+		<PopupButton
+			Icon={Focus}
+			label={m.focus_route()}
+			IconActive={Scan}
+			labelActive={m.unfocus_route()}
+			active={routeFocused}
+			onclick={() => {
+				setFocusedRouteMapId(routeFocused ? null : selectedMapId);
+				refreshRouteFeatures();
+			}}
+		/>
+	{/if}
 	{#if supportsPopupAction(selectedType, PopupAction.DIMMED)}
 		<PopupButton
 			Icon={EyeClosed}

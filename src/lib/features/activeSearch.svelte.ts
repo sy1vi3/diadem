@@ -16,6 +16,14 @@ import type { ContestFocus, QuestReward } from "@/lib/types/mapObjectData/pokest
 import { getDefaultGymFilter } from "@/lib/utils/gymUtils";
 import { getDefaultPokestopFilter, RewardType } from "@/lib/utils/pokestopUtils";
 import { getDefaultStationFilter } from "@/lib/utils/stationUtils";
+import {
+	closeOverlay,
+	isReconcilingOverlays,
+	openOverlay,
+	registerOverlayHandler
+} from "@/lib/ui/overlays.svelte";
+import { m } from "@/lib/paraglide/messages";
+import { mPokemon } from "$lib/services/ingameLocale";
 
 export type ActiveSearchParams = {
 	filter: AnyFilter;
@@ -25,28 +33,9 @@ export type ActiveSearchParams = {
 
 let activeSearchSvelte: ActiveSearchParams | undefined = $state(undefined);
 
-// setActiveSearch({
-// 	name: "Vulpix (Alola)",
-// 	mapObject: MapObjectType.POKEMON,
-// 	filter: {
-// 		category: "pokemon",
-// 		enabled: true,
-// 		filters: [
-// 			{
-// 				id: "searchOverwrite",
-// 				enabled: true,
-// 				title: { message: "unknown_filter" },
-// 				icon: { isUserSelected: false },
-// 				pokemon: [
-// 					{
-// 						pokemon_id: 37,
-// 						form: 56
-// 					}
-// 				]
-// 			}
-// 		]
-// 	} as FilterPokemon
-// });
+registerOverlayHandler("active-search", (entries) => {
+	if (entries.length === 0 && activeSearchSvelte) resetActiveSearchFilter();
+});
 
 export function getActiveSearch() {
 	return activeSearchSvelte;
@@ -60,11 +49,13 @@ export function setActiveSearch(newParams: ActiveSearchParams) {
 	activeSearchSvelte = newParams;
 	deleteAllFeatures();
 	updateAllMapObjects().then();
+	if (!isReconcilingOverlays()) openOverlay({ kind: "active-search", id: "banner" });
 }
 
 export function clearActiveSearchFilter() {
 	activeSearchSvelte = undefined;
 	deleteAllFeatures();
+	if (!isReconcilingOverlays()) closeOverlay({ kind: "active-search", id: "banner" });
 }
 
 export function resetActiveSearchFilter() {
@@ -72,12 +63,9 @@ export function resetActiveSearchFilter() {
 	updateAllMapObjects().then();
 }
 
-export function setActiveSearchPokemon(
-	name: string,
-	pokemon: { pokemon_id: number; form?: number }
-) {
+export function setActiveSearchPokemon(pokemon: { pokemon_id: number; form?: number }) {
 	setActiveSearch({
-		name,
+		name: mPokemon(pokemon),
 		mapObject: MapObjectType.POKEMON,
 		filter: {
 			category: "pokemon",
@@ -123,13 +111,17 @@ export function setActiveSearchQuest(name: string, reward: QuestReward) {
 			filterset.xlCandy = [{ id: reward.info.pokemon_id.toString() }];
 			break;
 		case RewardType.MEGA_ENERGY:
-			filterset.megaResource = [{ id: reward.info.pokemon_id.toString() }];
+		case RewardType.TEMP_EVO_BRANCH_RESOURCE:
+			filterset.megaResource = [{ id: String(reward.info.pokemon_id) }];
 			break;
 		case RewardType.XP:
 			filterset.xp = { min: 0, max: Infinity };
 			break;
 		case RewardType.STARDUST:
 			filterset.stardust = { min: 0, max: Infinity };
+			break;
+		case RewardType.POKECOINS:
+			filterset.pokecoins = { min: 0, max: Infinity };
 			break;
 	}
 
@@ -145,13 +137,13 @@ export function setActiveSearchQuest(name: string, reward: QuestReward) {
 	});
 }
 
-export function setActiveSearchKecleon(name: string) {
+export function setActiveSearchKecleon() {
 	const filter = getDefaultPokestopFilter();
 	filter.kecleon.enabled = true;
 	filter.enabled = true;
 
 	setActiveSearch({
-		name,
+		name: m.kecleon_pokestops(),
 		mapObject: MapObjectType.POKESTOP,
 		filter: filter
 	});
@@ -163,21 +155,9 @@ export function setActiveSearchContest(name: string, rankingStandard: number, fo
 		enabled: true,
 		title: { message: "unknown_filter" },
 		icon: { isUserSelected: false },
-		rankingStandard
+		rankingStandard,
+		focus
 	} as FiltersetContest;
-
-	if (focus.type === "pokemon") {
-		filterset.focus = {
-			pokemon_id: focus.pokemon_id
-		};
-		if (focus.pokemon_form) {
-			filterset.focus.form = focus.pokemon_form;
-		}
-	} else if (focus.type === "type") {
-		filterset.focus = {
-			type_id: focus.pokemon_type_1
-		};
-	}
 
 	const filter = getDefaultPokestopFilter();
 	filter.contest.enabled = true;
@@ -236,7 +216,8 @@ export function setActiveSearchInvasion(name: string, characterId: number) {
 export function setActiveSearchRaidBoss(
 	name: string,
 	pokemonId: number,
-	formId: number | undefined
+	formId: number | undefined,
+	tempEvoId: number | undefined
 ) {
 	const filterset = {
 		id: "searchOverwrite",
@@ -251,6 +232,7 @@ export function setActiveSearchRaidBoss(
 	} as FiltersetRaid;
 
 	if (formId && filterset.bosses) filterset.bosses[0].form = formId;
+	if (tempEvoId && filterset.bosses) filterset.bosses[0].temp_evolution_id = tempEvoId;
 
 	const filter = getDefaultGymFilter();
 	filter.gymPlain.enabled = false;
@@ -315,7 +297,7 @@ export function setActiveSearchMaxBattleBoss(
 	});
 }
 
-export function setActiveSearchNest(name: string, pokemon_id: number, form: number) {
+export function setActiveSearchNest(pokemon_id: number, form: number) {
 	const filter = { category: "nest", ...defaultFilter(true) } as FilterNest;
 
 	const pokemon = { pokemon_id, form };
@@ -331,7 +313,7 @@ export function setActiveSearchNest(name: string, pokemon_id: number, form: numb
 	filter.filters.push(filterset);
 
 	setActiveSearch({
-		name,
+		name: m.pokemon_nests({ pokemon: mPokemon({ pokemon_id, form }) }),
 		mapObject: MapObjectType.NEST,
 		filter: filter
 	});

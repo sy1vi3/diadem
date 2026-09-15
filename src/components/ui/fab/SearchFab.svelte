@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { isAnyModalOpen } from "@/lib/ui/modal.svelte.js";
+	import { isAnyModalOpen, isOpenModal } from "@/lib/ui/modal.svelte.js";
 	import Search from "@/components/ui/search/Search.svelte";
 	import BaseFab from "@/components/ui/fab/BaseFab.svelte";
-	import { Search as SearchIcon } from "lucide-svelte";
+	import { Search as SearchIcon } from "@lucide/svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
 	import { isSupportedFeature } from "@/lib/services/supportedFeatures";
 	import { isSearchViewActive } from "@/lib/features/activeSearch.svelte.js";
@@ -13,7 +13,7 @@
 		SearchableType,
 		type SearchOptions
 	} from "@/lib/services/search.svelte";
-	import type maplibre from "maplibre-gl";
+	import type * as maplibre from "maplibre-gl";
 	import { onShortcutSearch } from "@/lib/utils/keyboard";
 	import { onDestroy } from "svelte";
 	import { hasFeatureAnywhere } from "@/lib/services/user/checkPerm";
@@ -91,16 +91,18 @@
 	let isSearchAllowed = $derived(!isSearchViewActive() && hasSearchData && hasSearchPermission);
 	let searchInitialized: boolean = $state(false);
 
-	$effect(() => {
-		if (isSearchAllowed) {
+	async function openSearch() {
+		if (!searchInitialized) {
 			initSearch(searchOptions);
 			searchInitialized = true;
 		}
-	});
+
+		openSearchModal(searchOptions, map);
+	}
 
 	const cleanupSearchShortcut = onShortcutSearch(() => {
 		if (isSearchAllowed && !isAnyModalOpen()) {
-			openSearchModal(searchOptions);
+			void openSearch();
 		}
 	});
 	onDestroy(cleanupSearchShortcut);
@@ -118,12 +120,12 @@
 	<WayfarerSearchResults {results} {map} />
 {/snippet}
 
-{#if searchInitialized}
+{#if searchInitialized || isOpenModal("search")}
 	<Search {searchOptions} />
 {/if}
 
 {#if isSearchAllowed}
-	<BaseFab onclick={() => openSearchModal(searchOptions, map)}>
+	<BaseFab onclick={openSearch}>
 		<SearchIcon size="24" />
 	</BaseFab>
 {/if}

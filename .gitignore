@@ -1,6 +1,4 @@
 node_modules
-.idea
-.zed
 config/*
 !config/*example*
 config.toml
@@ -11,11 +9,20 @@ src/routes/(custom)/*
 src/custom.css
 coverage/*
 
+# IDEs
+.idea
+.zed
+
 # Output
 .output
 .vercel
 /.svelte-kit
+/.svelte-kit-native
 /build
+
+# Release artifacts (built by CI / locally)
+*.apk
+*.aab
 
 # OS
 .DS_Store
@@ -35,8 +42,15 @@ vite.config.ts.timestamp-*
 # Docker
 docker-compose.yml
 
-# LLM bullshit
+# LLMs
 .claude
+.opencode
 
 # VSCode stuff
 .vscode
+
+# Capacitor / native
+.gradle
+
+# F-Droid repo cloned locally
+/fdroiddata

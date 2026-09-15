@@ -4,7 +4,8 @@ import { getMasterPokemon } from "@/lib/services/masterfile";
 import { RaidLevel } from "@/lib/utils/gymUtils";
 import { formatNumber } from "@/lib/utils/numberFormat";
 import { League } from "@/lib/utils/pokemonUtils";
-import { INVASION_CHARACTER_LEADERS, INVASION_CHARACTER_NOTYPES } from "@/lib/utils/pokestopUtils";
+import { Character, INVASION_CHARACTER_LEADERS } from "@/lib/utils/pokestopUtils";
+import { getHeaders, parseResponse } from "@/lib/utils/requests";
 
 export const prefixes = {
 	pokemon: "poke_",
@@ -17,7 +18,8 @@ export const prefixes = {
 	alignment: "alignment_",
 	generation: "generation_",
 	quest: "quest_title_",
-	character: "grunt_a_"
+	character: "grunt_a_",
+	routetag: "route_tag_"
 };
 
 let remoteLocales: { [key: string]: { [key: string]: string } } = {};
@@ -25,26 +27,14 @@ let remoteLocales: { [key: string]: { [key: string]: string } } = {};
 export async function loadRemoteLocale(languageTag: string, thisFetch: typeof fetch = fetch) {
 	if (Object.keys(remoteLocales).includes(languageTag)) return;
 
-	const result = await thisFetch("/api/locale/" + languageTag);
-	const data = await result.json();
+	const result = await thisFetch("/api/locale/" + languageTag, { headers: getHeaders() });
+	const data = await parseResponse<Record<string, string>>(result);
 	remoteLocales[languageTag] = data;
 }
 
 function getIngameLocale() {
 	const languageTag = getLocale();
-	let locale = remoteLocales[languageTag];
-
-	if (!locale) {
-		const allRemoteLocales = Object.values(remoteLocales);
-
-		if (allRemoteLocales) {
-			locale = allRemoteLocales[0];
-		} else {
-			return {};
-		}
-	}
-
-	return locale;
+	return remoteLocales[languageTag] ?? Object.values(remoteLocales)[0] ?? {};
 }
 
 function mIngame(key: string): string {
@@ -67,7 +57,7 @@ function mBasicId(
 	plural: boolean = false
 ): string {
 	// @ts-ignore dynamic message
-	if (!id) return m["unknown_" + name]();
+	if (!id) return defaultName ?? m["unknown_" + name]();
 
 	const suffix = plural ? "_plural" : "";
 
@@ -123,6 +113,12 @@ export function mPokemon(data: {
 			const formName = data.form ? mIngame(prefixes.form + data.form) : "";
 			if (formName) name += " (" + formName + ")";
 		}
+	}
+
+	// add shadow prefix
+	if (data.alignment === 1) {
+		const alignmentName = mAlignment(1);
+		if (alignmentName) name = alignmentName + " " + name;
 	}
 
 	// get dynamax/gigantamax names
@@ -199,6 +195,12 @@ export function mRaid(raidLevel?: number | string | null, plural: boolean = fals
 			return plural
 				? m.x_star_shadow_raids({ level: raidLevel - 10 })
 				: m.x_star_shadow_raid({ level: raidLevel - 10 });
+		} else if (raidLevel === RaidLevel.MEGA_SUPER) {
+			return plural ? m.super_mega_raids() : m.super_mega_raid();
+		} else if (raidLevel === RaidLevel.MEGA_SUPER_LEGENDARY) {
+			return plural ? m.legendary_super_mega_raids() : m.legendary_super_mega_raid();
+		} else if (raidLevel === RaidLevel.UNITY_1 || raidLevel === RaidLevel.UNITY_2) {
+			return plural ? m.unity_raids() : m.unity_raid();
 		}
 	}
 
@@ -229,19 +231,49 @@ export function mGeneration(generationId?: number | string | null) {
 	return mBasicId("generation", generationId);
 }
 
-/**
- * Get localized grunt character
- * @param characterId
- */
-export function mCharacter(characterId?: number | string | null) {
-	const character = mBasicId("character", characterId);
+export function mCharacter(
+	characterId?: number | string | null,
+	options:
+		| {
+				plural?: boolean;
+				confirmed?: boolean | null;
+		  }
+		| undefined = undefined
+) {
+	if (!characterId) return m.unknown_character();
+
+	characterId = Number(characterId);
+	if (characterId === Character.GRUNT_MALE) {
+		return options?.plural ? m.male_grunts() : m.male_grunt();
+	} else if (characterId === Character.GRUNT_FEMALE) {
+		return options?.plural ? m.female_grunts() : m.female_grunt();
+	}
+
+	if (characterId === 44 && !options?.confirmed) {
+		return m.giovanni_or_decoy();
+	}
+
+	let character = mBasicId("character", characterId);
+
 	if (
-		INVASION_CHARACTER_LEADERS.includes(Number(characterId)) ||
-		INVASION_CHARACTER_NOTYPES.includes(Number(characterId))
+		INVASION_CHARACTER_LEADERS.includes(Number(characterId)) &&
+		characterId !== Character.DECOY_MALE &&
+		characterId !== Character.DECOY_FEMALE
 	) {
 		return character;
 	}
-	return m.character_grunt({ character });
+
+	if (character.includes(" ♀")) {
+		character = m.female_type({ type: character.replace("♀", "") });
+	} else if (character.includes(" ♂")) {
+		character = m.male_type({ type: character.replace("♂", "") });
+	}
+
+	if (characterId === Character.DECOY_FEMALE || characterId === Character.DECOY_MALE) {
+		character = m.decoy();
+	}
+
+	return options?.plural ? m.character_grunts({ character }) : m.character_grunt({ character });
 }
 
 export function mLeague(league: League) {
@@ -250,4 +282,26 @@ export function mLeague(league: League) {
 	if (league === League.ULTRA) return m.ultra_league();
 	if (league === League.MASTER) return m.master_league();
 	return m.unknown_league();
+}
+
+export function mTeam(teamId: number | undefined) {
+	switch (teamId) {
+		case 1:
+			return m.team_mystic();
+		case 2:
+			return m.team_valor();
+		case 3:
+			return m.team_instinct();
+		default:
+			return m.team_neutral();
+	}
+}
+
+export function mRouteTag(value: string) {
+	value = value.replace(/^route_tag_/, "");
+	const label = mBasicId("routetag", value, "");
+	if (label) return label;
+
+	const fallback = value.replaceAll("_", " ");
+	return fallback.charAt(0).toUpperCase() + fallback.slice(1);
 }

@@ -1,10 +1,10 @@
-FROM node:22-slim AS base
-RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+FROM node:24-slim AS base
+RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 WORKDIR /app
 
 FROM base AS deps
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches/
 RUN pnpm install --frozen-lockfile
 
@@ -31,7 +31,7 @@ ENV PORT=3900
 EXPOSE 3900
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
-FROM node:22-slim AS runtime
+FROM node:24-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -40,6 +40,7 @@ RUN groupadd --gid 1001 diadem && \
     useradd --uid 1001 --gid diadem --shell /bin/bash --create-home diadem
 COPY --from=builder --chown=diadem:diadem /app/build ./build
 COPY --from=builder --chown=diadem:diadem /app/package.json ./
+COPY --from=builder --chown=diadem:diadem /app/cluster.mjs ./
 COPY --from=deps --chown=diadem:diadem /app/node_modules ./node_modules
 
 # Files needed for drizzle-kit db:push at runtime

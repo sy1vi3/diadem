@@ -1,48 +1,48 @@
 <script lang="ts">
 	import BottomNav from "@/components/ui/BottomNav.svelte";
-	import ContextMenu from "@/components/ui/contextmenu/ContextMenu.svelte";
 	import { getConfig } from "@/lib/services/config/config";
 	import { getCurrentSelectedData } from "@/lib/mapObjects/currentSelectedState.svelte.js";
 	import WeatherOverview from "@/components/map/WeatherOverview.svelte";
+	import DataLimitNotice from "@/components/map/DataLimitNotice.svelte";
 	import { isSupportedFeature } from "@/lib/services/supportedFeatures";
-	import { closeMenu, getOpenedMenu } from "@/lib/ui/menus.svelte.js";
+	import { closeMenu, getOpenedMenu, Menu } from "@/lib/ui/menus.svelte.js";
 	import Fabs from "@/components/ui/fab/Fabs.svelte";
 	import PopupContainer from "@/components/ui/popups/PopupContainer.svelte";
 	import DesktopMenu from "@/components/menus/DesktopMenu.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
-	import { isMenuSidebar } from "@/lib/utils/device";
+	import { isMenuSidebar, isUiLeft } from "@/lib/utils/device";
 	import Home from "@/components/custom/Home.svelte";
 	import { isWebglSupported } from "@/lib/map/utils";
 	import ErrorPage from "@/components/ui/ErrorPage.svelte";
 	import * as m from "@/lib/paraglide/messages";
 	import Button from "@/components/ui/input/Button.svelte";
 	import DiscordIcon from "@/components/icons/DiscordIcon.svelte";
+	import { startLogin } from "@/lib/services/user/login";
 	import QuestFilterset from "@/components/menus/filters/filterset/quest/QuestFilterset.svelte";
 	import RaidFilterset from "@/components/menus/filters/filterset/raid/RaidFilterset.svelte";
 	import PokemonFilterset from "@/components/menus/filters/filterset/pokemon/PokemonFilterset.svelte";
 	import InvasionFilterset from "@/components/menus/filters/filterset/invasion/InvasionFilterset.svelte";
 	import MaxBattleFilterset from "@/components/menus/filters/filterset/maxBattle/MaxBattleFilterset.svelte";
-	import {
-		isSearchViewActive,
-		resetActiveSearchFilter,
-		setActiveSearch
-	} from "@/lib/features/activeSearch.svelte.js";
+	import { isSearchViewActive } from "@/lib/features/activeSearch.svelte.js";
 	import ActiveSearchView from "@/components/ui/search/ActiveSearchView.svelte";
 	import { isOnMap } from "@/lib/utils/getMapPath";
 	import ErrorPageWebGl from "@/components/ui/ErrorPageWebGl.svelte";
 	import MapMain from "@/components/map/MapMain.svelte";
 	import MapMenuUi from "@/components/ui/MapMenuUi.svelte";
-	import type maplibre from "maplibre-gl";
-	import { onDestroy, onMount } from "svelte";
+	import type * as maplibre from "maplibre-gl";
+	import { watch } from "runed";
 
 	let map: maplibre.Map | undefined = $state(undefined);
 
-	$effect(() => {
-		// When opening a popup on mobile while in a menu, close the menu
-		if (getCurrentSelectedData() && !isMenuSidebar()) {
-			closeMenu();
+	watch(
+		() => [getCurrentSelectedData(), isMenuSidebar()],
+		([selected, sidebar]) => {
+			// When opening a popup on mobile while in a menu, close the menu
+			if (selected && !sidebar) {
+				closeMenu();
+			}
 		}
-	});
+	);
 
 	const errorHref = getConfig().general.customHome ? "/" : "";
 </script>
@@ -54,8 +54,8 @@
 {:else if hasLoadedFeature(LoadedFeature.SUPPORTED_FEATURES) && isSupportedFeature("showFullscreenLogin")}
 	<ErrorPage error={m.discord_block_title()} description={m.discord_block_desc()} href={errorHref}>
 		{#snippet extraButtons()}
-			<Button href="/login/discord" tag="a">
-				<DiscordIcon class="fill-primary-foreground w-3.5 shrink-0" />
+			<Button onclick={() => startLogin()}>
+				<DiscordIcon class="w-3.5 shrink-0" />
 				<span>{m.discord_block_button()}</span>
 			</Button>
 		{/snippet}
@@ -67,15 +67,11 @@
 	<InvasionFilterset />
 	<MaxBattleFilterset />
 
-	<ContextMenu />
-
 	{#if isSearchViewActive()}
-		<div class="fixed z-10 top-2 px-2 w-full pointer-events-none">
+		<div class="fixed z-50 top-safe-inset-top px-2 w-full pointer-events-none">
 			<ActiveSearchView />
 		</div>
 	{/if}
-
-	<WeatherOverview />
 
 	<MapMenuUi>
 		{#snippet desktopLeft()}
@@ -87,17 +83,37 @@
 			{/if}
 		{/snippet}
 		{#snippet desktopRight()}
-			{#if !isSearchViewActive()}
-				<Fabs {map} allowFollow={true} />
-			{/if}
-			<PopupContainer />
-		{/snippet}
-
-		{#snippet mobileBottom()}
-			{#if !getOpenedMenu()}
+			<div class="mb-auto mx-2 flex flex-col items-end gap-2">
+				<WeatherOverview />
+				<DataLimitNotice />
+			</div>
+			<div class="flex">
 				{#if !isSearchViewActive()}
 					<Fabs {map} allowFollow={true} />
 				{/if}
+			</div>
+		{/snippet}
+		{#snippet desktopRightSidebar()}
+			<PopupContainer alwaysExpanded={true} />
+		{/snippet}
+
+		{#snippet mobileTop()}
+			<div
+				class="fixed top-safe-inset-top z-10 flex flex-col gap-2"
+				class:right-2={!isUiLeft() || isMenuSidebar()}
+				class:left-2={isUiLeft() && !isMenuSidebar()}
+				class:items-end={!isUiLeft() || isMenuSidebar()}
+				class:items-start={isUiLeft() && !isMenuSidebar()}
+			>
+				<DataLimitNotice />
+				<WeatherOverview />
+			</div>
+		{/snippet}
+		{#snippet mobileBottom()}
+			{#if !isSearchViewActive() && getOpenedMenu() !== Menu.SCOUT}
+				<Fabs {map} allowFollow={true} />
+			{/if}
+			{#if !getOpenedMenu()}
 				<PopupContainer />
 			{/if}
 			{#if !isSearchViewActive()}

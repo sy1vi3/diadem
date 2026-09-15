@@ -1,0 +1,60 @@
+diff --git a/api.js b/api.js
+index f4ecb91959f62fc938416a0585458c0a710af161..cff5e6308fb0e46961c4c441f9f2e8406c482978 100644
+--- a/api.js
++++ b/api.js
+@@ -25345,10 +25345,12 @@ AND
+         progressCallback("checks", checksCount, "fetching");
+       }
+       for (const checkConstraintRow of checkConstraints) {
+-        const constraintName = checkConstraintRow["CONSTRAINT_NAME"];
+-        const constraintValue = checkConstraintRow["CHECK_CLAUSE"];
+-        const tableName = checkConstraintRow["TABLE_NAME"];
++        const constraintName = checkConstraintRow["CONSTRAINT_NAME"] ?? checkConstraintRow["constraint_name"];
++        const constraintValue = checkConstraintRow["CHECK_CLAUSE"] ?? checkConstraintRow["check_clause"];
++        const tableName = checkConstraintRow["TABLE_NAME"] ?? checkConstraintRow["table_name"];
+         const tableInResult = result[tableName];
++        if (typeof tableInResult === "undefined")
++          continue;
+         tableInResult.checkConstraint[constraintName] = {
+           name: constraintName,
+           value: constraintValue
+diff --git a/api.mjs b/api.mjs
+index a940272dfb05accf57a472c46c52652ec9ad0080..3a4b4ebf315694e713fce6b9527c229058ee15ce 100644
+--- a/api.mjs
++++ b/api.mjs
+@@ -25374,10 +25374,12 @@ AND
+         progressCallback("checks", checksCount, "fetching");
+       }
+       for (const checkConstraintRow of checkConstraints) {
+-        const constraintName = checkConstraintRow["CONSTRAINT_NAME"];
+-        const constraintValue = checkConstraintRow["CHECK_CLAUSE"];
+-        const tableName = checkConstraintRow["TABLE_NAME"];
++        const constraintName = checkConstraintRow["CONSTRAINT_NAME"] ?? checkConstraintRow["constraint_name"];
++        const constraintValue = checkConstraintRow["CHECK_CLAUSE"] ?? checkConstraintRow["check_clause"];
++        const tableName = checkConstraintRow["TABLE_NAME"] ?? checkConstraintRow["table_name"];
+         const tableInResult = result[tableName];
++        if (typeof tableInResult === "undefined")
++          continue;
+         tableInResult.checkConstraint[constraintName] = {
+           name: constraintName,
+           value: constraintValue
+diff --git a/bin.cjs b/bin.cjs
+index 07274ea6f53fd54a129b3d338892feda6e995cff..0372da84aaff2c165c21c77747bd4626f62fcbb8 100755
+--- a/bin.cjs
++++ b/bin.cjs
+@@ -16683,10 +16683,12 @@ AND
+         progressCallback("checks", checksCount, "fetching");
+       }
+       for (const checkConstraintRow of checkConstraints) {
+-        const constraintName = checkConstraintRow["CONSTRAINT_NAME"];
+-        const constraintValue = checkConstraintRow["CHECK_CLAUSE"];
+-        const tableName = checkConstraintRow["TABLE_NAME"];
++        const constraintName = checkConstraintRow["CONSTRAINT_NAME"] ?? checkConstraintRow["constraint_name"];
++        const constraintValue = checkConstraintRow["CHECK_CLAUSE"] ?? checkConstraintRow["check_clause"];
++        const tableName = checkConstraintRow["TABLE_NAME"] ?? checkConstraintRow["table_name"];
+         const tableInResult = result[tableName];
++        if (typeof tableInResult === "undefined")
++          continue;
+         tableInResult.checkConstraint[constraintName] = {
+           name: constraintName,
+           value: constraintValue

@@ -1,33 +1,55 @@
-import { decode } from "@msgpack/msgpack";
+import { decode, encode } from "@msgpack/msgpack";
+import { isNative } from "@/lib/native/runtime";
+import { getConfig } from "@/lib/services/config/config";
 
-export function getHeaders(options?: { msgpack?: boolean }): Record<string, string> {
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json"
-	};
-	if (options?.msgpack ?? false) headers.Accept = "application/msgpack";
+const MSGPACK_CONTENT_TYPE = "application/msgpack";
+
+// Default to msgpack before config has loaded.
+function useMsgpack() {
+	return getConfig()?.general.msgpack !== false;
+}
+
+export function getHeaders(contentType?: string): Headers {
+	const headers = new Headers();
+	headers.set(
+		"Accept",
+		useMsgpack() ? `${MSGPACK_CONTENT_TYPE}, application/json;q=0.9` : "application/json"
+	);
+	if (contentType) headers.set("Content-Type", contentType);
 	return headers;
 }
 
-export async function parseResponse<T>(response: Response): Promise<T | undefined> {
-	if (!response.ok) {
-		console.error(`Error during fetch: ${response.status}`);
-		return;
+export function encodeRequestBody(body: unknown): {
+	body: BodyInit;
+	contentType: string;
+	byteLength: number;
+} {
+	const json = JSON.stringify(body);
+	if (json === undefined) throw new TypeError("Request body is not serializable");
+
+	if (isNative() || !useMsgpack()) {
+		return {
+			body: json,
+			contentType: "application/json",
+			byteLength: new TextEncoder().encode(json).byteLength
+		};
 	}
 
-	if (response.headers.get("Content-Type") === "application/msgpack") {
-		try {
-			const buffer = await response.arrayBuffer();
-			return decode(new Uint8Array(buffer)) as T;
-		} catch (e) {
-			console.error("Error parsing msgpack response", e);
-		}
-	} else if (response.headers.get("Content-Type") === "application/json") {
-		try {
-			return (await response.json()) as T;
-		} catch (e) {
-			console.error("Error parsing json response", e);
-		}
-	}
+	const encoded = encode(JSON.parse(json));
+	return {
+		body: encoded as BodyInit,
+		contentType: MSGPACK_CONTENT_TYPE,
+		byteLength: encoded.byteLength
+	};
+}
 
-	return;
+export async function parseResponse<T>(response: Response): Promise<T> {
+	const contentType = response.headers.get("Content-Type")?.split(";", 1)[0]?.toLowerCase();
+	if (contentType === MSGPACK_CONTENT_TYPE) {
+		return decode(new Uint8Array(await response.arrayBuffer())) as T;
+	}
+	if (contentType === "application/json" || contentType?.endsWith("+json")) {
+		return (await response.json()) as T;
+	}
+	throw new TypeError(`Unsupported response content type: ${contentType ?? "none"}`);
 }

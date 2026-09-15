@@ -23,14 +23,14 @@
 	import { changeAttributeMinMax } from "@/lib/features/filters/filtersetUtils.svelte";
 	import { getQuestRewards } from "@/lib/features/masterStats.svelte";
 	import {
+		getAttributeLabelPokecoins,
 		getAttributeLabelStardust,
 		getAttributeLabelXp,
 		questBounds
 	} from "@/lib/features/filters/filterUtilsQuest";
 
 	let data: FiltersetQuest | undefined = $derived(getCurrentSelectedFilterset()?.data) as
-		| FiltersetQuest
-		| undefined;
+		FiltersetQuest | undefined;
 
 	const hasReward = (type: RewardType) => getQuestRewards(type).length > 0;
 </script>
@@ -88,7 +88,7 @@
 					</Attribute>
 				{/if}
 
-				{#if hasReward(RewardType.MEGA_ENERGY)}
+				{#if hasReward(RewardType.MEGA_ENERGY) || hasReward(RewardType.TEMP_EVO_BRANCH_RESOURCE)}
 					<Attribute label={rewardTypeLabel(RewardType.MEGA_ENERGY)}>
 						<AttributeChip
 							label={makeAttributeMegaResourceLabel(data.megaResource ?? [])}
@@ -100,6 +100,7 @@
 								data={thisData}
 								attribute="megaResource"
 								rewardType={RewardType.MEGA_ENERGY}
+								rewardTypes={[RewardType.MEGA_ENERGY, RewardType.TEMP_EVO_BRANCH_RESOURCE]}
 								getId={(info) => String((info as { pokemon_id: number }).pokemon_id)}
 							/>
 						{/snippet}
@@ -163,6 +164,35 @@
 										"stardust",
 										questBounds.stardust.min,
 										questBounds.stardust.max,
+										min,
+										max
+									)}
+							/>
+						{/snippet}
+					</Attribute>
+				{/if}
+
+				{#if hasReward(RewardType.POKECOINS)}
+					<Attribute label={rewardTypeLabel(RewardType.POKECOINS)}>
+						<AttributeChip
+							label={getAttributeLabelPokecoins(data.pokecoins)}
+							isEmpty={!data.pokecoins}
+							onremove={() => delete data.pokecoins}
+						/>
+						{#snippet page(thisData: FiltersetQuest)}
+							<SliderRange
+								min={questBounds.pokecoins.min}
+								max={questBounds.pokecoins.max}
+								step={1}
+								title={rewardTypeLabel(RewardType.POKECOINS)}
+								valueMin={thisData.pokecoins?.min ?? questBounds.pokecoins.min}
+								valueMax={thisData.pokecoins?.max ?? questBounds.pokecoins.max}
+								onchange={([min, max]) =>
+									changeAttributeMinMax(
+										thisData,
+										"pokecoins",
+										questBounds.pokecoins.min,
+										questBounds.pokecoins.max,
 										min,
 										max
 									)}
