@@ -5,29 +5,20 @@
 	import { mPokemon } from "$lib/services/ingameLocale";
 	import type { MapData } from "$lib/mapObjects/mapObjectTypes";
 	import ImagePopup from "@/components/ui/popups/common/ImagePopup.svelte";
-	import OverviewCard from "@/components/ui/popups/common/OverviewCard.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import StatsMainCard from "@/components/ui/popups/common/StatsMainCard.svelte";
 	import StatsMainCardEntry from "@/components/ui/popups/common/StatsMainCardEntry.svelte";
 	import UpdatedTimes from "@/components/ui/popups/common/UpdatedTimes.svelte";
 	import { getIconPokemon } from "$lib/services/uicons.svelte";
 	import { formatDecimal, formatNumber, formatPercentage } from "$lib/utils/numberFormat";
-	import {
-		CircleDot,
-		CircleSlash2,
-		Info,
-		MapPinned,
-		RotateCcw,
-		Trees,
-		VectorSquare
-	} from "@lucide/svelte";
+	import { CircleDot, CircleSlash2, Info, VectorSquare } from "@lucide/svelte";
 	import type { NestData } from "$lib/types/mapObjectData/nest";
 	import AccessPolygonMap from "@/components/ui/popups/common/AccessPolygonMap.svelte";
 	import QuickSearchButton from "@/components/ui/popups/common/QuickSearchButton.svelte";
 	import { setActiveSearchPokemon } from "$lib/features/activeSearch.svelte";
 	import PokemonStatsCard from "@/components/ui/popups/common/PokemonStatsCard.svelte";
 
-	export { image, overview, main };
+	export { image, headerDetails, main };
 
 	export function getPopupPropsNest(data: MapData) {
 		data = data as NestData;
@@ -35,7 +26,7 @@
 			type: m.pogo_nest(),
 			title: m.pokemon_nest({ pokemon: mPokemon(data) }),
 			image,
-			overview,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -48,19 +39,13 @@
 	</div>
 {/snippet}
 
-{#snippet overview(d: MapData)}
+{#snippet headerDetails(d: MapData)}
 	{@const data = d as NestData}
-
-	{#if data.name}
-		<OverviewCard Icon={Trees} title={m.park_name()} value={data.name} />
-	{/if}
-
-	<OverviewCard
-		Icon={RotateCcw}
-		title={m.nest_avg()}
-		value={m.nest_avg_value({ avg: formatDecimal(data.pokemon_avg) })}
-	/>
-	<OverviewCard Icon={MapPinned} title={m.spawnpoints()} value={formatNumber(data.spawnpoints)} />
+	{#if data.name}<p class="text-sm font-medium">{data.name}</p>{/if}
+	<div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+		<span title={m.nest_avg()}>{m.nest_avg_value({ avg: formatDecimal(data.pokemon_avg) })}</span>
+		<span>{m.spawnpoints()}: {formatNumber(data.spawnpoints)}</span>
+	</div>
 {/snippet}
 
 {#snippet main(d: MapData)}
@@ -68,21 +53,6 @@
 
 	<TitledMainSection Icon={Info} title={m.about_this_nest()}>
 		<StatsMainCard>
-			<StatsMainCardEntry
-				Icon={Trees}
-				name={m.park_name()}
-				value={data.name ? data.name : m.unknown()}
-			/>
-			<StatsMainCardEntry
-				Icon={RotateCcw}
-				name={m.nest_avg()}
-				value={m.nest_avg_value({ avg: formatDecimal(data.pokemon_avg) })}
-			/>
-			<StatsMainCardEntry
-				Icon={MapPinned}
-				name={m.nest_spawnpoint_count()}
-				value={formatNumber(data.spawnpoints)}
-			/>
 			<StatsMainCardEntry
 				Icon={CircleSlash2}
 				name={m.nest_ratio()}
