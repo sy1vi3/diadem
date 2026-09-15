@@ -6,7 +6,6 @@
 	import { type MapData, MapObjectType } from "$lib/mapObjects/mapObjectTypes";
 	import ImagePopup from "@/components/ui/popups/common/ImagePopup.svelte";
 	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
-	import OverviewCard from "@/components/ui/popups/common/OverviewCard.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import {
 		getIconBackground,
@@ -24,7 +23,6 @@
 		Clock,
 		Flower,
 		Medal,
-		Rat,
 		ShieldHalf,
 		SlidersHorizontal,
 		UsersRound
@@ -58,7 +56,6 @@
 	import { isFortOutdated } from "$lib/utils/gymUtils";
 	import BigExpireTime from "@/components/ui/popups/common/BigExpireTime.svelte";
 	import InvasionLineupEntry from "@/components/ui/popups/common/InvasionLineupEntry.svelte";
-	import BigIconOverview from "@/components/ui/popups/common/BigIconOverview.svelte";
 	import QuickSearchButton from "@/components/ui/popups/common/QuickSearchButton.svelte";
 	import {
 		setActiveSearchInvasion,
@@ -71,7 +68,7 @@
 	import { givesQuestBackground } from "$lib/utils/pokestopUtils";
 	import RoutesStartingHere from "@/components/ui/popups/route/RoutesStartingHere.svelte";
 
-	export { image, overview, main };
+	export { image, headerDetails, main };
 
 	export function getPopupPropsPokestop(data: MapData) {
 		data = data as PokestopData;
@@ -79,7 +76,7 @@
 			type: m.pogo_pokestop(),
 			title: data.name ?? m.unknown_pokestop(),
 			image,
-			overview,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -141,158 +138,32 @@
 	/>
 {/snippet}
 
-{#snippet overview(d: MapData)}
+{#snippet headerDetails(d: MapData)}
 	{@const data = d as PokestopData}
-
-	{#if !data.isRouteEndpoint}
-		{@const quest = data.quests[0]}
-		{@const [invasions, kecleons, contests] = getIncidents(data)}
-
-		{#if quest}
-			<OverviewCard Icon={QuestIcon} title={m.pogo_quest()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<div class="relative size-12">
-							<ImagePopup
-								class="absolute size-full z-10"
-								src={getIconReward(quest.reward.type, quest.reward.info)}
-								alt={getRewardText(quest.reward)}
-							/>
-							{#if givesQuestBackground(quest) && "background" in quest.reward.info && quest.reward.info.background}
-								<ImagePopup
-									class="absolute size-full scale-105 mask-[radial-gradient(circle,black_35%,transparent_70%)]"
-									src={resize(getIconBackground(quest.reward.info.background), { width: 64 })}
-									alt={m.background()}
-								/>
-							{/if}
-						</div>
-					{/snippet}
-
-					{#snippet title()}
-						{getRewardText(quest.reward)}
-					{/snippet}
-
-					{#snippet extra()}
-						{mQuest(quest.title, quest.target)}
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/if}
-
-		{#each invasions as invasion (invasion.id)}
-			{@const name = mCharacter(invasion.character, { confirmed: invasion.confirmed })}
-			{@const reward = invasion.confirmed_reward}
-			<OverviewCard Icon={InvasionIcon} title={m.pogo_invasion()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<div class="relative size-12">
-							{#if reward}
-								<ImagePopup src={getIconPokemon(reward)} alt={name} />
-								<ImagePopup
-									class="absolute right-0 bottom-0 size-6"
-									src={getIconInvasion(invasion.character, invasion.confirmed)}
-									alt={name}
-								/>
-							{:else}
-								<ImagePopup
-									src={getIconInvasion(invasion.character, invasion.confirmed)}
-									alt={name}
-								/>
-							{/if}
-						</div>
-					{/snippet}
-
-					{#snippet title()}
-						{#if reward}
-							{mPokemon(reward)}
-						{:else}
-							{name}
-						{/if}
-					{/snippet}
-
-					{#snippet extra()}
-						{#if reward}
-							<span>{name}</span>
-						{/if}
-						<span class="flex gap-1 items-center">
-							<Clock class="size-3" />
-							<Countdown expireTime={invasion.expiration} />
-						</span>
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/each}
-
-		{#if data?.lure_expire_timestamp && data.lure_expire_timestamp >= currentTimestamp()}
-			{@const lureId = data?.lure_id ?? 501}
-			<OverviewCard Icon={Flower} title={m.lure_module()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<ImagePopup src={getIconItem(lureId)} alt={mItem(lureId)} />
-					{/snippet}
-
-					{#snippet title()}
-						{mItem(lureId)}
-					{/snippet}
-
-					{#snippet extra()}
-						<span class="flex gap-1 items-center">
-							<Clock class="size-3" />
-							<Countdown expireTime={data.lure_expire_timestamp} />
-						</span>
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/if}
-
-		{#each kecleons as kecleon (kecleon.id)}
-			<OverviewCard Icon={Rat} title={m.hidden_here()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<ImagePopup
-							src={getIconPokemon({ pokemon_id: KECLEON_ID })}
-							alt={mPokemon({ pokemon_id: KECLEON_ID })}
-						/>
-					{/snippet}
-
-					{#snippet title()}
-						{m.kecleon()}
-					{/snippet}
-
-					{#snippet extra()}
-						<span class="flex gap-1 items-center">
-							<Clock class="size-3" />
-							<Countdown expireTime={kecleon.expiration} />
-						</span>
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/each}
-
-		{#if contests.length > 0 && (data?.showcase_expiry ?? 0) >= currentTimestamp()}
-			{@const name =
-				data.showcase_ranking_standard && data.contest_focus
-					? getContestText(data.showcase_ranking_standard, data.contest_focus)
-					: m.unknown_contest()}
-			<OverviewCard Icon={Medal} title={m.contest()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<ImagePopup src={getContestIcon(data.contest_focus)} alt={name} />
-					{/snippet}
-
-					{#snippet title()}
-						{name}
-					{/snippet}
-
-					{#snippet extra()}
-						<span class="flex gap-1.5 items-center">
-							<Clock class="size-3" />
-							<Countdown expireTime={data.showcase_expiry ?? 0} />
-						</span>
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/if}
+	{#if !data.isRouteEndpoint && !isFortOutdated(data.updated)}
+		{@const [, kecleons] = getIncidents(data)}
+		<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+			{#if data.lure_expire_timestamp && data.lure_expire_timestamp >= currentTimestamp()}
+				<span class="inline-flex flex-wrap items-center gap-1.5">
+					<ImagePopup class="size-5" src={getIconItem(data.lure_id ?? 501)} alt="" />
+					{mItem(data.lure_id ?? 501)}
+					<span class="text-muted-foreground"
+						><Countdown expireTime={data.lure_expire_timestamp} /></span
+					>
+				</span>
+			{/if}
+			{#each kecleons as kecleon (kecleon.id)}
+				<span class="inline-flex items-center gap-1.5"
+					><ImagePopup
+						class="size-6"
+						src={getIconPokemon({ pokemon_id: KECLEON_ID })}
+						alt=""
+					/>{m.kecleon()}
+					<span class="text-muted-foreground"><Countdown expireTime={kecleon.expiration} /></span
+					></span
+				>
+			{/each}
+		</div>
 	{/if}
 {/snippet}
 
@@ -316,11 +187,9 @@
 				</IconValue>
 			</BasicMainCard>
 		{:else}
-			<TitledMainSection Icon={QuestIcon} title={m.pogo_quest()} disabled={!Boolean(quest)}>
-				<BasicMainCard>
-					{#if !quest}
-						{m.no_quest_scanned_today()}
-					{:else}
+			{#if quest}
+				<TitledMainSection Icon={QuestIcon} title={m.pogo_quest()}>
+					<BasicMainCard>
 						<div class="mb-3 flex items-center gap-2" class:gap-3!={givesQuestBackground(quest)}>
 							<div class="relative size-7 shrink-0" class:size-9!={givesQuestBackground(quest)}>
 								<ImagePopup
@@ -349,7 +218,7 @@
 							</div>
 						</div>
 
-						<div class="bg-accent-highlight rounded-md py-3 px-4 mb-3">
+						<div class="mb-3">
 							<p class="text-muted-foreground text-sm">
 								{m.task()}
 							</p>
@@ -375,192 +244,119 @@
 								setActiveSearchQuest(name, reward);
 							}}
 						/>
-					{/if}
-				</BasicMainCard>
-			</TitledMainSection>
+					</BasicMainCard>
+				</TitledMainSection>
+			{/if}
 
-			<TitledMainSection
-				Icon={InvasionIcon}
-				title={m.pogo_invasion()}
-				disabled={invasions.length === 0}
-			>
-				<div class="space-y-4">
-					{#if invasions.length === 0}
-						<BasicMainCard>
-							{m.no_invasions_at_pokestop()}
-						</BasicMainCard>
-					{/if}
-					{#each invasions as invasion (invasion.id)}
-						{@const lineup = getInvasionLineup(invasion.character)}
-						<BasicMainCard>
-							{@const reward = invasion.confirmed_reward}
-							{@const name = mCharacter(invasion.character, { confirmed: invasion.confirmed })}
+			{#if invasions.length > 0}
+				<TitledMainSection Icon={InvasionIcon} title={m.pogo_invasion()}>
+					<div class="space-y-4">
+						{#each invasions as invasion (invasion.id)}
+							{@const lineup = getInvasionLineup(invasion.character)}
+							<BasicMainCard>
+								{@const reward = invasion.confirmed_reward}
+								{@const name = mCharacter(invasion.character, { confirmed: invasion.confirmed })}
 
-							<MainCardBigIcon
-								src={getIconInvasion(invasion.character, invasion.confirmed)}
-								alt={name}
-								title={name}
-							/>
+								<MainCardBigIcon
+									src={getIconInvasion(invasion.character, invasion.confirmed)}
+									alt={name}
+									title={name}
+								/>
 
-							<BigExpireTime expire={invasion.expiration} />
+								<BigExpireTime expire={invasion.expiration} />
 
-							{#if reward}
-								<IconValue class="mt-5" Icon={BadgeCheck}>
-									{m.confirmed_reward()}
-								</IconValue>
-								<div class="bg-accent-highlight rounded-md p-3 mt-2">
-									<div class="flex gap-4 w-full justify-center items-center">
-										<div class="size-10 shrink-0">
-											<ImagePopup
-												class="size-10"
-												src={getIconPokemon(reward)}
-												alt={mPokemon(reward)}
+								{#if reward}
+									<IconValue class="mt-5" Icon={BadgeCheck}>
+										{m.confirmed_reward()}
+									</IconValue>
+									<div class="bg-accent-highlight rounded-md p-3 mt-2">
+										<div class="flex gap-4 w-full justify-center items-center">
+											<div class="size-10 shrink-0">
+												<ImagePopup
+													class="size-10"
+													src={getIconPokemon(reward)}
+													alt={mPokemon(reward)}
+												/>
+											</div>
+
+											<span class="font-semibold">
+												{mPokemon(reward)}
+											</span>
+										</div>
+										{#if lineup?.second?.[0]?.encounter}
+											<div class="flex flex-col items-center mt-5 mb-1">
+												<p class="">
+													{m.or_x_chance_to_get({ chance: 16 })}
+												</p>
+
+												<div class="flex flex-wrap gap-3 mt-2">
+													{#each lineup.second as extraReward (extraReward.pokemon_id + "-" + extraReward.form)}
+														{@const pokemon = getInvasionPokemon(extraReward)}
+														{#if !(pokemon.pokemon_id === reward.pokemon_id && pokemon.form === reward.form)}
+															<div>
+																<div class="size-8 shrink-0">
+																	<ImagePopup
+																		class="size-8"
+																		src={getIconPokemon(pokemon)}
+																		alt={mPokemon(pokemon)}
+																	/>
+																</div>
+															</div>
+														{/if}
+													{/each}
+												</div>
+											</div>
+										{/if}
+									</div>
+								{/if}
+
+								{#if lineup}
+									<div class="-mx-4 mt-5">
+										<IconValue class="mb-1.5 px-4" Icon={ShieldHalf}>
+											{m.possible_lineup()}
+										</IconValue>
+										<div class="grid grid-cols-1 gap-2 px-4 mt-2">
+											<InvasionLineupEntry
+												position={1}
+												lineup={lineup.first}
+												slotPokemonId={invasion.slot_1_pokemon_id}
+												slotForm={invasion.slot_1_form}
+											/>
+											<InvasionLineupEntry
+												position={2}
+												lineup={lineup.second}
+												slotPokemonId={invasion.slot_2_pokemon_id}
+												slotForm={invasion.slot_2_form}
+											/>
+											<InvasionLineupEntry
+												position={3}
+												lineup={lineup.third}
+												slotPokemonId={invasion.slot_3_pokemon_id}
+												slotForm={invasion.slot_3_form}
 											/>
 										</div>
-
-										<span class="font-semibold">
-											{mPokemon(reward)}
-										</span>
 									</div>
-									{#if lineup?.second?.[0]?.encounter}
-										<div class="flex flex-col items-center mt-5 mb-1">
-											<p class="">
-												{m.or_x_chance_to_get({ chance: 16 })}
-											</p>
+								{/if}
 
-											<div class="flex gap-3 mt-2">
-												{#each lineup.second as extraReward (extraReward.pokemon_id + "-" + extraReward.form)}
-													{@const pokemon = getInvasionPokemon(extraReward)}
-													{#if !(pokemon.pokemon_id === reward.pokemon_id && pokemon.form === reward.form)}
-														<div>
-															<div class="size-8 shrink-0">
-																<ImagePopup
-																	class="size-8"
-																	src={getIconPokemon(pokemon)}
-																	alt={mPokemon(pokemon)}
-																/>
-															</div>
-														</div>
-													{/if}
-												{/each}
-											</div>
-										</div>
-									{/if}
-								</div>
-							{/if}
+								<QuickSearchButton
+									label={m.find_more_x({ x: mCharacter(invasion.character, { plural: true }) })}
+									onclick={() => {
+										setActiveSearchInvasion(name, invasion.character);
+									}}
+								/>
+							</BasicMainCard>
+						{/each}
+					</div>
+				</TitledMainSection>
+			{/if}
 
-							{#if lineup}
-								<div class="-mx-4 mt-5">
-									<IconValue class="mb-1.5 px-4" Icon={ShieldHalf}>
-										{m.possible_lineup()}
-									</IconValue>
-									<div class="w-full flex overflow-x-auto *:shrink-0 gap-3 px-4 mt-2">
-										<InvasionLineupEntry
-											position={1}
-											lineup={lineup.first}
-											slotPokemonId={invasion.slot_1_pokemon_id}
-											slotForm={invasion.slot_1_form}
-										/>
-										<InvasionLineupEntry
-											position={2}
-											lineup={lineup.second}
-											slotPokemonId={invasion.slot_2_pokemon_id}
-											slotForm={invasion.slot_2_form}
-										/>
-										<InvasionLineupEntry
-											position={3}
-											lineup={lineup.third}
-											slotPokemonId={invasion.slot_3_pokemon_id}
-											slotForm={invasion.slot_3_form}
-										/>
-									</div>
-								</div>
-							{/if}
+			{#if kecleons.length > 0}<QuickSearchButton
+					label={m.find_more_x({ x: m.kecleon() })}
+					onclick={setActiveSearchKecleon}
+				/>{/if}
 
-							<QuickSearchButton
-								label={m.find_more_x({ x: mCharacter(invasion.character, { plural: true }) })}
-								onclick={() => {
-									setActiveSearchInvasion(name, invasion.character);
-								}}
-							/>
-						</BasicMainCard>
-					{/each}
-				</div>
-			</TitledMainSection>
-
-			<TitledMainSection
-				Icon={Flower}
-				title={m.lure_module()}
-				disabled={(data?.lure_expire_timestamp ?? 0) < currentTimestamp()}
-			>
-				<BasicMainCard>
-					{#if !data?.lure_expire_timestamp}
-						{m.no_lure_seen_here()}
-					{:else if data.lure_expire_timestamp < currentTimestamp()}
-						<IconValue Icon={Clock}>
-							{m.last_lure_ended({
-								time: timestampToLocalTime(data.lure_expire_timestamp, {
-									showDate: true,
-									showSeconds: false,
-									longMonth: true
-								})
-							})}
-						</IconValue>
-					{:else}
-						<MainCardBigIcon
-							src={getIconItem(data?.lure_id ?? 501)}
-							alt={mItem(data?.lure_id ?? 501)}
-							title={mItem(data?.lure_id ?? 501)}
-						/>
-
-						<BigExpireTime expire={data.lure_expire_timestamp} />
-					{/if}
-				</BasicMainCard>
-			</TitledMainSection>
-
-			<TitledMainSection Icon={Rat} title={m.kecleon()} disabled={kecleons.length === 0}>
-				<BasicMainCard>
-					{#if kecleons.length === 0}
-						{m.no_kecleon_hiding_here()}
-					{:else}
-						<MainCardBigIcon
-							src={getIconPokemon({ pokemon_id: KECLEON_ID })}
-							alt={mPokemon({ pokemon_id: KECLEON_ID })}
-							title={m.kecleon_hiding_here()}
-						/>
-
-						<BigExpireTime expire={kecleons[0]?.expiration ?? 0} />
-
-						<QuickSearchButton
-							label={m.find_more_x({ x: m.kecleon() })}
-							onclick={setActiveSearchKecleon}
-						/>
-					{/if}
-				</BasicMainCard>
-			</TitledMainSection>
-
-			<TitledMainSection
-				Icon={Medal}
-				title={m.contest()}
-				disabled={contests.length === 0 || (data?.showcase_expiry ?? 0) < currentTimestamp()}
-			>
-				{#if contests.length === 0 || (data?.showcase_expiry ?? 0) < currentTimestamp()}
-					<BasicMainCard>
-						{#if !data.showcase_expiry}
-							{m.pokestop_never_hosted_showcase()}
-						{:else}
-							<IconValue Icon={Clock}>
-								{m.last_showcase_ended({
-									time: timestampToLocalTime(data.showcase_expiry, {
-										showDate: true,
-										showSeconds: false,
-										longMonth: true
-									})
-								})}
-							</IconValue>
-						{/if}
-					</BasicMainCard>
-				{:else}
+			{#if contests.length > 0 && (data.showcase_expiry ?? 0) >= currentTimestamp()}
+				<TitledMainSection Icon={Medal} title={m.contest()}>
 					<BasicMainCard>
 						{@const name =
 							data.showcase_ranking_standard && data.contest_focus
@@ -620,8 +416,8 @@
 							</div>
 						</div>
 					</BasicMainCard>
-				{/if}
-			</TitledMainSection>
+				</TitledMainSection>
+			{/if}
 		{/if}
 	{/if}
 

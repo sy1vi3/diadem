@@ -29,34 +29,20 @@
 	});
 </script>
 
-<div>
-	<div
-		class="rounded-t-md px-4 py-4 bg-accent-highlight relative"
-		class:rounded-b-md={!catchable}
-		class:pb-1.5={catchable}
-	>
-		<div class="flex items-center">
-			<p class="text-muted-foreground/50 font-bold text-3xl">
-				{position}
-			</p>
-
-			<div class="ml-2">
-				<div class="flex items-center">
-					{#each pokemon as slotMon (`${slotMon.pokemon_id}-${slotMon.form}`)}
-						<div class="p-1 size-12">
-							<ImagePopup src={getIconPokemon(slotMon)} alt={mPokemon(slotMon)} />
-						</div>
-					{/each}
-				</div>
-			</div>
+<div class="flex items-start gap-3 rounded-md bg-accent-highlight px-3 py-2">
+	<span class="pt-1 text-sm font-semibold text-muted-foreground">{position}</span>
+	<div class="min-w-0 flex-1">
+		<div class="flex flex-wrap gap-2">
+			{#each pokemon as slotMon (`${slotMon.pokemon_id}-${slotMon.form}`)}
+				<span class="inline-flex items-center gap-1 text-sm">
+					<ImagePopup class="size-8 shrink-0" src={getIconPokemon(slotMon)} alt="" />{mPokemon(
+						slotMon
+					)}
+				</span>
+			{/each}
 		</div>
+		{#if catchable}<p class="mt-1 text-xs text-indigo-600 dark:text-indigo-300">
+				{m.catchable()}
+			</p>{/if}
 	</div>
-
-	{#if catchable}
-		<p
-			class="w-full text-center px-2 py-1 my-1 text-sm font-medium rounded-b-md outline bg-indigo-200 text-indigo-900 outline-indigo-400 dark:text-indigo-200 dark:bg-indigo-950 dark:outline-indigo-800"
-		>
-			{m.catchable()}
-		</p>
-	{/if}
 </div>
