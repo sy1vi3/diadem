@@ -2,21 +2,19 @@
 	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
-	import { mItem, mMove, mPokemon, mWeather } from "$lib/services/ingameLocale";
+	import { mItem, mMove, mPokemon, mWeather, mType } from "$lib/services/ingameLocale";
 	import type { MapData } from "$lib/mapObjects/mapObjectTypes";
 	import { MapObjectType } from "$lib/mapObjects/mapObjectTypes";
 	import Button from "@/components/ui/input/Button.svelte";
 	import ImagePopup from "@/components/ui/popups/common/ImagePopup.svelte";
 	import Countdown from "@/components/utils/Countdown.svelte";
 	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
-	import OverviewCard from "@/components/ui/popups/common/OverviewCard.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import StatsMainCard from "@/components/ui/popups/common/StatsMainCard.svelte";
 	import StatsMainCardEntry from "@/components/ui/popups/common/StatsMainCardEntry.svelte";
-	import IvBreakdown from "@/components/ui/popups/pokemon/IvBreakdown.svelte";
 	import UpdatedTimes from "@/components/ui/popups/common/UpdatedTimes.svelte";
 	import MainAccessMap from "@/components/ui/popups/common/MainAccessMap.svelte";
-	import { getIconItem, getIconPokemon } from "$lib/services/uicons.svelte";
+	import { getIconItem, getIconPokemon, getIconType } from "$lib/services/uicons.svelte";
 	import {
 		getPokemonStats as getMasterPokemonStats,
 		type PokemonStats
@@ -37,7 +35,6 @@
 		showPvp,
 		showUltra
 	} from "$lib/utils/pokemonUtils";
-	import { slide } from "svelte/transition";
 	import { resize } from "$lib/services/assets";
 	import { getWeatherIcon } from "$lib/utils/weatherIcons";
 	import { getUserSettings } from "$lib/services/userSettings.svelte";
@@ -48,7 +45,6 @@
 		Award,
 		BicepsFlexed,
 		ChartColumn,
-		ChevronDown,
 		CircleDot,
 		CircleSmall,
 		Expand,
@@ -60,18 +56,17 @@
 		Shrink,
 		SlidersHorizontal,
 		Spotlight,
-		SquareChartGantt,
 		Swords,
 		Trash2,
 		Venus
 	} from "@lucide/svelte";
 	import FiltersetIcon from "$lib/features/filters/FiltersetIcon.svelte";
 	import PokemonStatsCard from "@/components/ui/popups/common/PokemonStatsCard.svelte";
-	import BigCountdown from "@/components/ui/popups/common/BigCountdown.svelte";
-	import { mLeague } from "$lib/services/ingameLocale.ts";
-	import { getIconLeague } from "$lib/services/uicons.svelte.ts";
+	import { mLeague } from "$lib/services/ingameLocale";
+	import { getIconLeague } from "$lib/services/uicons.svelte";
 
-	export { image, overview, main };
+	import { getMasterPokemon } from "$lib/services/masterfile";
+	export { image, titleDetails, headerDetails, main };
 
 	type PvpLeague = League.LITTLE | League.GREAT | League.ULTRA;
 	type PvpPopupEntry = PvpStats & { league: PvpLeague };
@@ -92,12 +87,12 @@
 			type: m.wild_pokemon(),
 			title: pokemonName(data),
 			image,
-			overview,
+			titleDetails,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
 
-	let showIvBreakdown: boolean = $state(false);
 	let mapExpandedRadius: boolean = $state(false);
 
 	function pokemonName(data: Partial<PokemonData>) {
@@ -173,76 +168,78 @@
 	</div>
 {/snippet}
 
-{#snippet overview(d: MapData)}
+{#snippet titleDetails(d: MapData)}
 	{@const data = d as PokemonData}
+	<div class="flex flex-wrap items-center gap-1.5">
+		{#each getMasterPokemon(data.pokemon_id, data.form)?.types ?? [] as type}
+			<ImagePopup src={getIconType(type)} alt={mType(type)} class="size-4" />
+		{/each}
+		{#if data.size && [1, 5].includes(data.size)}<span class="text-xs font-medium"
+				>{getPokemonSize(data.size)}</span
+			>{/if}
+	</div>
+{/snippet}
 
-	<OverviewCard title={hasTimer(data) ? m.popup_despawns() : m.popup_found()}>
-		{#snippet value()}
-			<Countdown expireTime={hasTimer(data) ? data.expire_timestamp : data.first_seen_timestamp} />
-		{/snippet}
-	</OverviewCard>
-
-	{#if data.iv != null}
-		<OverviewCard title={m.pogo_ivs()}>
-			{#snippet value()}
-				{@render coloredIvs(data?.iv ?? -1, 1)}
-			{/snippet}
-		</OverviewCard>
-	{/if}
-
-	{#if showLittle(data)}
-		<OverviewCard title={m.little_league()}>
-			{#snippet value()}
-				#{getBestRank(data, League.LITTLE)}
-			{/snippet}
-		</OverviewCard>
-	{/if}
-
-	{#if showGreat(data)}
-		<OverviewCard title={m.great_league()}>
-			{#snippet value()}
-				#{getBestRank(data, League.GREAT)}
-			{/snippet}
-		</OverviewCard>
-	{/if}
-
-	{#if showUltra(data)}
-		<OverviewCard title={m.ultra_league()}>
-			{#snippet value()}
-				#{getBestRank(data, League.ULTRA)}
-			{/snippet}
-		</OverviewCard>
-	{/if}
-
-	{#if data.size && [1, 5].includes(data.size)}
-		<OverviewCard title={m.pokemon_size()} value={getPokemonSize(data?.size ?? 3)} />
-	{/if}
-
-	{#if data.cp != null}
-		<OverviewCard title={m.cp()} value={data.cp} />
-	{/if}
-
-	{#if data.level != null}
-		<OverviewCard title={m.level()} value={data.level} />
-	{/if}
+{#snippet headerDetails(d: MapData)}
+	{@const data = d as PokemonData}
+	<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
+		{#if data.iv != null}
+			<span
+				><span class="text-muted-foreground">{m.pogo_ivs()}</span>
+				<strong>{@render coloredIvs(data.iv, 1)}</strong>
+				<span
+					class="text-xs text-muted-foreground"
+					title="{m.attack()} / {m.defense()} / {m.stamina()}"
+					>({data.atk_iv ?? "–"}/{data.def_iv ?? "–"}/{data.sta_iv ?? "–"})</span
+				>
+			</span>
+		{/if}
+		{#if data.cp != null}<span
+				><span class="text-muted-foreground">{m.cp()}</span> <strong>{data.cp}</strong></span
+			>{/if}
+		{#if data.level != null}<span
+				><span class="text-muted-foreground">{m.level()}</span> <strong>{data.level}</strong></span
+			>{/if}
+	</div>
+	<div
+		class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground tabular-nums"
+	>
+		<span
+			>{hasTimer(data) ? m.popup_despawns() : m.popup_found()}
+			<Countdown
+				expireTime={hasTimer(data) ? data.expire_timestamp : data.first_seen_timestamp}
+			/></span
+		>
+		{#each [League.LITTLE, League.GREAT, League.ULTRA] as league}
+			{#if (league === League.LITTLE && showLittle(data)) || (league === League.GREAT && showGreat(data)) || (league === League.ULTRA && showUltra(data))}
+				<span class="inline-flex items-center gap-1"
+					><ImagePopup src={getIconLeague(league)} alt={mLeague(league)} class="size-4" /> #{getBestRank(
+						data,
+						league
+					)}</span
+				>
+			{/if}
+		{/each}
+		{#if data.weather}{@const WeatherIcon = getWeatherIcon(data.weather)}<span
+				class="inline-flex items-center gap-1"
+				title={m.weather_boost()}><WeatherIcon class="size-3.5" />{mWeather(data.weather)}</span
+			>{/if}
+	</div>
 {/snippet}
 
 {#snippet main(d: MapData)}
 	{@const data = d as PokemonData}
 	{@const stats: PokemonStats | undefined = getMasterPokemonStats(data.pokemon_id, data.form ?? 0)}
 	{@const statsEntry = stats?.entry}
-	{@const WeatherIcon = getWeatherIcon(data.weather)}
 	{@const pvpNotice = getPvpNotice(data)}
 
-	<BigCountdown
-		expire={data.expire_timestamp ?? 0}
-		fallbackExpire={data.first_seen_timestamp ?? 0}
-		useFallback={!hasTimer(data)}
-		fallbackTitle={m.first_seen()}
-		fallbackExplanation={data.seen_type?.includes("nearby")
-			? m.unknown_spawnpoint_notice_nearby()
-			: m.unknown_spawnpoint_notice()}
-	/>
+	{#if !hasTimer(data)}
+		<p class="text-xs text-muted-foreground">
+			{data.seen_type?.includes("nearby")
+				? m.unknown_spawnpoint_notice_nearby()
+				: m.unknown_spawnpoint_notice()}
+		</p>
+	{/if}
 
 	<div class="space-y-2">
 		<!--Special seen types-->
@@ -357,60 +354,6 @@
 		{/if}
 	</div>
 
-	{#if data.iv != null || data.cp != null || data.level != null}
-		<TitledMainSection Icon={SquareChartGantt} title={m.values()}>
-			<StatsMainCard>
-				{#if data.iv != null}
-					<div>
-						<Button
-							variant=""
-							size=""
-							class="flex text-base! font-normal! justify-between! w-full"
-							onclick={() => (showIvBreakdown = !showIvBreakdown)}
-						>
-							<p class="text-muted-foreground">
-								{m.iv_product_label_long()}
-							</p>
-							<div class="flex items-center">
-								<ChevronDown
-									class="size-3.5 mr-2 text-muted-foreground transition-transform"
-									style="rotate: {showIvBreakdown ? '180deg' : '0deg'}"
-								/>
-								{@render coloredIvs(data.iv, 2)}
-							</div>
-						</Button>
-						{#if showIvBreakdown}
-							<div class="mt-4 mb-5 space-y-1" transition:slide={{ duration: 110 }}>
-								<IvBreakdown name={m.attack()} value={data.atk_iv ?? 0} />
-								<IvBreakdown name={m.defense()} value={data.def_iv ?? 0} />
-								<IvBreakdown name={m.stamina()} value={data.sta_iv ?? 0} />
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				{#if data.cp}
-					<StatsMainCardEntry name={m.cp()} value={data.cp} />
-				{/if}
-				{#if data.level}
-					<StatsMainCardEntry name={m.level()} value={data.level} />
-				{/if}
-				<StatsMainCardEntry name={m.weather_boost()}>
-					{#snippet value()}
-						{#if data.weather}
-							<div class="flex items-center gap-1.5">
-								<WeatherIcon class="size-4" />
-								{mWeather(data.weather)}
-							</div>
-						{:else}
-							{m.modifier_none()}
-						{/if}
-					{/snippet}
-				</StatsMainCardEntry>
-			</StatsMainCard>
-		</TitledMainSection>
-	{/if}
-
 	{#if showGreat(data) || showUltra(data) || showLittle(data)}
 		<TitledMainSection Icon={Swords} title={m.pvp_performance()}>
 			<BasicMainCard>
@@ -491,7 +434,10 @@
 
 	{#if !data.seen_type?.includes("nearby")}
 		{#if getConfig().general.showAccessMaps !== false}
-			<TitledMainSection Icon={CircleDot} title={m.access_this_pokemon({ name: speciesName(data) })}>
+			<TitledMainSection
+				Icon={CircleDot}
+				title={m.access_this_pokemon({ name: speciesName(data) })}
+			>
 				<div class="relative">
 					<MainAccessMap
 						lat={data.lat}
