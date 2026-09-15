@@ -706,5 +706,7 @@
 	"address_unavailable": "Address unavailable",
 	"my_location": "My Location",
 	"in_range": "In Range",
-	"defender_deployed_cp": "CP when placed"
+	"defender_deployed_cp": "CP when placed",
+	"copy_address": "Copy address",
+	"copy_coordinates": "Copy coordinates"
 }

@@ -8,21 +8,23 @@
 	import { getIconGym, getIconPokestop, getIconStation } from "$lib/services/uicons.svelte";
 	import { copyToClipboard, hasClipboardWrite } from "$lib/utils/device";
 	import { formatDistance } from "$lib/utils/numberFormat";
-	import { CircleDot, Clipboard, House, MapPin } from "@lucide/svelte";
+	import { CircleDot, Clipboard, MapPin } from "@lucide/svelte";
 	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
 	import { isSupportedFeature } from "$lib/services/supportedFeatures";
 	import FortImage from "@/components/ui/popups/common/FortImage.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import { formattedCoordinates } from "$lib/features/location.svelte";
 
-	export { image, overview, main };
+	export { image, titleDetails, headerDetails, overview, main };
 
 	export function getPopupPropsLocation(d: MapData): MapObjectPopupProps {
 		const data = d as LocationData;
 		return {
 			type: data.isCurrentLocation ? m.my_location() : m.location(),
-			title: data.address ?? formattedCoordinates(data),
+			title: data.address || formattedCoordinates(data),
 			image,
+			titleDetails,
+			headerDetails,
 			overview,
 			main
 		};
@@ -35,6 +37,43 @@
 	>
 		<MapPin class="size-5.5" />
 	</div>
+{/snippet}
+
+{#snippet titleDetails(d: MapData)}
+	{@const data = d as LocationData}
+	{#if hasClipboardWrite()}
+		<button
+			class="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+			aria-label={data.address ? m.copy_address() : m.copy_coordinates()}
+			title={data.address ? m.copy_address() : m.copy_coordinates()}
+			onclick={() => copyToClipboard(data.address || formattedCoordinates(data))}
+		>
+			<Clipboard class="size-4" />
+		</button>
+	{/if}
+{/snippet}
+
+{#snippet headerDetails(d: MapData)}
+	{@const data = d as LocationData}
+	{#if data.address}
+		<button
+			class="inline-flex items-center gap-2 rounded text-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
+			disabled={!hasClipboardWrite()}
+			aria-label={m.copy_coordinates()}
+			title={m.copy_coordinates()}
+			onclick={() => copyToClipboard(formattedCoordinates(data))}
+		>
+			<MapPin class="size-3.5 shrink-0" />
+			{formattedCoordinates(data)}
+			{#if hasClipboardWrite()}<Clipboard class="size-3.5 shrink-0" />{/if}
+		</button>
+	{:else if isSupportedFeature("geocoding")}
+		{#if data.isAddressLoading}
+			<div class="h-4 w-48 max-w-full animate-pulse rounded bg-accent-highlight"></div>
+		{:else}
+			<p class="text-xs text-muted-foreground">{m.address_unavailable()}</p>
+		{/if}
+	{/if}
 {/snippet}
 
 {#snippet countCard(single: string, plural: string, value: number, loading: boolean)}
@@ -106,44 +145,6 @@
 
 {#snippet main(d: MapData)}
 	{@const data = d as LocationData}
-
-	<div class="space-y-2">
-		{#if isSupportedFeature("geocoding")}
-			<BasicMainCard class="p-0!">
-				<button
-					class="flex items-center gap-4 text-left size-full p-4!"
-					disabled={data.isAddressLoading || !data.address || !hasClipboardWrite()}
-					onclick={() => data.address && copyToClipboard(data.address)}
-				>
-					<House class="size-4 shrink-0 text-muted-foreground" />
-					<div class="w-full">
-						{#if data.isAddressLoading}
-							<div class="mt-1 h-5 w-full animate-pulse rounded bg-accent-highlight"></div>
-						{:else}
-							<p class="font-medium">{data.address ?? m.address_unavailable()}</p>
-						{/if}
-					</div>
-					{#if data.address && hasClipboardWrite()}
-						<Clipboard class="size-4 shrink-0 text-muted-foreground ml-auto" />
-					{/if}
-				</button>
-			</BasicMainCard>
-		{/if}
-
-		<BasicMainCard class="p-0!">
-			<button
-				class="flex items-center gap-4 text-left size-full p-4!"
-				disabled={!hasClipboardWrite()}
-				onclick={() => copyToClipboard(formattedCoordinates(data))}
-			>
-				<MapPin class="size-4 shrink-0 text-muted-foreground" />
-				<div class="font-medium">{formattedCoordinates(data)}</div>
-				{#if hasClipboardWrite()}
-					<Clipboard class="size-4 shrink-0 text-muted-foreground ml-auto" />
-				{/if}
-			</button>
-		</BasicMainCard>
-	</div>
 
 	{#if data.nearbyPermissions.length > 0}
 		<TitledMainSection Icon={CircleDot} title={m.in_range()}>
