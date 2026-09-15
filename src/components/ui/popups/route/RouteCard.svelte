@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from "@/components/ui/input/Button.svelte";
 	import ImagePopup from "@/components/ui/popups/common/ImagePopup.svelte";
+	import { getIconForMap } from "$lib/services/uicons.svelte";
 	import { getMap } from "@/lib/map/map.svelte";
 	import { openPopup } from "@/lib/mapObjects/interact";
 	import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
@@ -8,9 +9,9 @@
 	import * as m from "@/lib/paraglide/messages";
 	import type { RouteData } from "@/lib/types/mapObjectData/route";
 	import { formatDistance, formatDuration } from "@/lib/utils/numberFormat";
-	import { getRouteBounds, getRouteColor } from "@/lib/utils/routeUtils";
+	import { getRouteBounds, getRouteEndpointFort } from "@/lib/utils/routeUtils";
 	import type { LucideIcon } from "@/lib/types/lucide";
-	import { Clock, MapPinned, Ruler } from "@lucide/svelte";
+	import { ChevronDown, Clock, MapPinned, Ruler } from "@lucide/svelte";
 
 	let {
 		route,
@@ -25,6 +26,9 @@
 	let endName = $derived(
 		end.name ?? (end.type === MapObjectType.GYM ? m.unknown_gym() : m.unknown_pokestop())
 	);
+	let endFort = $derived(getRouteEndpointFort([route], end.id));
+	let endImage = $derived(end.image || (endFort ? getIconForMap(endFort) : undefined));
+
 	let routeMetrics: { Icon: LucideIcon; title: string; value: string }[] = $derived([
 		{
 			Icon: Ruler,
@@ -50,52 +54,31 @@
 	}
 </script>
 
-<h3 class="font-semibold wrap-break-word text-lg">
-	{route.name || m.unknown_route()}
-</h3>
-
-<div class="mt-3 grid grid-cols-2 gap-3">
-	{#each routeMetrics as { Icon, title, value } (title)}
-		<div class="border bg-accent-highlight border-border rounded-lg px-3 py-2">
-			<h2 class="flex items-center gap-1 text-muted-foreground text-sm font-semibold mb0.5">
-				<Icon class="size-3.5" />
-				{title}
-			</h2>
-
-			<p class="font-semibold text-lg">
-				{value}
-			</p>
-		</div>
-	{/each}
-</div>
-
-<div class="mt-4">
-	<div class="flex items-center gap-3 w-full">
-		{#if end.image}
-			<ImagePopup
-				src={end.image}
-				alt={endName}
-				class="size-11 shrink-0 rounded-full object-cover outline-offset-2 outline-2"
-				style="outline-color: {getRouteColor(route)}"
-			/>
-		{:else}
-			<div
-				class="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-highlight"
-			>
-				<MapPinned class="size-6 text-muted-foreground" />
-			</div>
-		{/if}
-
-		<div class="min-w-0">
-			<p class="text-sm font-medium text-muted-foreground">
-				{m.route_leads_to()}
-			</p>
-			<p class="font-medium text-base line-clamp-2">{endName}</p>
-		</div>
+<details class="group">
+	<summary
+		class="flex cursor-pointer list-none items-center gap-3 px-3 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+	>
+		{#if endImage}
+			<ImagePopup src={endImage} alt={endName} class="size-10 shrink-0 rounded-full object-cover" />
+		{:else}<MapPinned class="size-8 shrink-0 text-muted-foreground" />{/if}
+		<span class="min-w-0 flex-1">
+			<span class="block break-words font-medium">{route.name || m.unknown_route()}</span>
+			<span class="mt-0.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+				{#each routeMetrics as { Icon, title, value } (title)}<span
+						class="inline-flex items-center gap-1"
+						{title}><Icon class="size-3" />{value}</span
+					>{/each}
+			</span>
+		</span>
+		<ChevronDown
+			class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+		/>
+	</summary>
+	<div class="border-t border-border px-4 py-3">
+		<p class="text-xs text-muted-foreground">{m.route_leads_to()}</p>
+		<p class="break-words text-sm font-medium">{endName}</p>
+		<Button variant="link" size="sm" class="mt-2 px-0!" onclick={showRoutePopup}
+			><MapPinned class="size-3.5" />{m.show_route()}</Button
+		>
 	</div>
-</div>
-
-<Button variant="link" class="mb-2 w-full mt-auto" onclick={showRoutePopup}>
-	<MapPinned class="size-3.5" />
-	{m.show_route()}
-</Button>
+</details>

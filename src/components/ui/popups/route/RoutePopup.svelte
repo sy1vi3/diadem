@@ -14,7 +14,8 @@
 	import { mRouteTag } from "$lib/services/ingameLocale";
 	import { getRouteColor } from "$lib/utils/routeUtils";
 
-	export { image, main };
+	import { formatDistance, formatDuration } from "$lib/utils/numberFormat";
+	export { image, headerDetails, main };
 
 	export function getPopupPropsRoute(data: MapData) {
 		data = data as RouteData;
@@ -22,6 +23,7 @@
 			type: m.pogo_route(),
 			title: data.name || m.unknown_route(),
 			image,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -41,6 +43,14 @@
 			<Signpost class="size-6" />
 		</div>
 	{/if}
+{/snippet}
+
+{#snippet headerDetails(d: MapData)}
+	{@const data = d as RouteData}
+	<p class="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+		<span>{m.route_distance()}: {formatDistance(data.distance_meters)}</span>
+		<span>{m.route_duration()}: {formatDuration(data.duration_seconds)}</span>
+	</p>
 {/snippet}
 
 {#snippet main(d: MapData)}
@@ -63,8 +73,6 @@
 							</span>
 						{/each}
 					</div>
-				{:else}
-					<p class="">{m.unavailable()}</p>
 				{/if}
 			</div>
 

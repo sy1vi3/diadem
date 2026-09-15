@@ -1,5 +1,4 @@
 <script lang="ts">
-	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import RouteCard from "@/components/ui/popups/route/RouteCard.svelte";
 	import { getMapObjects } from "@/lib/mapObjects/mapObjectsState.svelte";
@@ -23,20 +22,14 @@
 	);
 </script>
 
-{#if hasFeatureAnywhere(getUserDetails().permissions, Features.ROUTE)}
-	<TitledMainSection Icon={Signpost} title={m.routes_from_here()} disabled={routes.length === 0}>
-		{#if routes.length === 0}
-			<BasicMainCard>{m.no_routes_starting_here()}</BasicMainCard>
-		{:else}
-			<div class="-mx-4">
-				<div class="flex w-full gap-3 overflow-x-auto px-4 *:shrink-0">
-					{#each routes as route (route.mapId)}
-						<BasicMainCard class="w-full max-w-64 flex flex-col min-h-0">
-							<RouteCard {route} originFortId={fortId} />
-						</BasicMainCard>
-					{/each}
-				</div>
+{#if routes.length > 0 && hasFeatureAnywhere(getUserDetails().permissions, Features.ROUTE)}
+	<TitledMainSection Icon={Signpost} title={m.routes_from_here()}>
+		{#key fortId}
+			<div class="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				{#each routes as route (route.mapId)}
+					<RouteCard {route} originFortId={fortId} />
+				{/each}
 			</div>
-		{/if}
+		{/key}
 	</TitledMainSection>
 {/if}
