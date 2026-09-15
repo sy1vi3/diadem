@@ -11,7 +11,6 @@
 	import Button from "@/components/ui/input/Button.svelte";
 	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
 	import MainAccessMap from "@/components/ui/popups/common/MainAccessMap.svelte";
-	import OverviewCard from "@/components/ui/popups/common/OverviewCard.svelte";
 	import StatsMainCard from "@/components/ui/popups/common/StatsMainCard.svelte";
 	import StatsMainCardEntry from "@/components/ui/popups/common/StatsMainCardEntry.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
@@ -27,15 +26,15 @@
 		Timer
 	} from "@lucide/svelte";
 
-	export { image, overview, main };
+	export { image, headerDetails, main };
 
 	export function getPopupPropsSpawnpoint(data: MapData) {
 		data = data as SpawnpointData;
 		return {
-			type: m.pogo_spawnpoint(),
+			type: "",
 			title: m.pogo_spawnpoint(),
 			image,
-			overview,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -63,17 +62,15 @@
 	></div>
 {/snippet}
 
-{#snippet overview(d: MapData)}
+{#snippet headerDetails(d: MapData)}
 	{@const data = d as SpawnpointData}
-	<OverviewCard Icon={Timer} title={m.disappear_time()}>
-		{#snippet value()}
-			{#if data.despawn_sec != null}
-				{getMmSsFromSeconds(data.despawn_sec)}
-			{:else}
-				{m.unknown()}
-			{/if}
-		{/snippet}
-	</OverviewCard>
+	<p class="flex flex-wrap items-center gap-1.5 text-sm">
+		<Timer class="size-3.5 text-muted-foreground" /><span class="text-muted-foreground"
+			>{m.disappear_time()}</span
+		><span class="tabular-nums font-medium"
+			>{data.despawn_sec != null ? getMmSsFromSeconds(data.despawn_sec) : m.unknown()}</span
+		>
+	</p>
 {/snippet}
 
 {#snippet main(d: MapData)}
@@ -99,11 +96,6 @@
 
 	<TitledMainSection Icon={Info} title={m.about_this_spawnpoint()}>
 		<StatsMainCard>
-			<StatsMainCardEntry
-				Icon={Timer}
-				name={m.disappear_time()}
-				value={data.despawn_sec != null ? getMmSsFromSeconds(data.despawn_sec) : m.unknown()}
-			/>
 			<StatsMainCardEntry Icon={FingerprintPattern} name={m.s2_cell_id()} value={data.id} />
 			<UpdatedTimes updated={data.last_seen} firstSeen={data.first_seen} />
 		</StatsMainCard>
