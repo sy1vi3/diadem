@@ -4,7 +4,7 @@
 	import * as m from "$lib/paraglide/messages";
 	import { mMove, mPokemon, mRaid, mTeam } from "$lib/services/ingameLocale";
 	import { type MapData, MapObjectType } from "$lib/mapObjects/mapObjectTypes";
-	import type { GymData, GymDefender } from "$lib/types/mapObjectData/gym";
+	import type { GymData } from "$lib/types/mapObjectData/gym";
 	import {
 		getIconGym,
 		getIconPokemon,
@@ -26,10 +26,7 @@
 	import Countdown from "@/components/utils/Countdown.svelte";
 	import RaidIcon from "@/components/icons/RaidIcon.svelte";
 	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
-	import BigIconOverview from "@/components/ui/popups/common/BigIconOverview.svelte";
 	import MainAccessMap from "@/components/ui/popups/common/MainAccessMap.svelte";
-	import MainCardBigIcon from "@/components/ui/popups/common/MainCardBigIcon.svelte";
-	import OverviewCard from "@/components/ui/popups/common/OverviewCard.svelte";
 	import StatsMainCardEntry from "@/components/ui/popups/common/StatsMainCardEntry.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import AboutFort from "@/components/ui/popups/common/AboutFort.svelte";
@@ -37,32 +34,27 @@
 	import BasicPokemonDisplayOne from "@/components/ui/popups/common/BasicPokemonDisplayOne.svelte";
 	import {
 		BadgeCheck,
-		Candy,
 		CircleAlert,
 		CircleDot,
 		Clock,
-		Heart,
-		Shield,
 		ShieldHalf,
 		SlidersHorizontal,
-		SquareEqual,
-		Star,
 		Swords,
-		UserRoundCheck,
-		UsersRound
+		UserRoundCheck
 	} from "@lucide/svelte";
 	import { getActiveRaidsForLevel } from "$lib/features/masterStats.svelte";
 	import { currentTimestamp } from "$lib/utils/currentTimestamp";
-	import { formatPercentage } from "$lib/utils/numberFormat";
+
 	import { getUserSettings } from "$lib/services/userSettings.svelte";
 	import { matchRaidFilterset } from "$lib/features/filterLogic/gym";
 	import FiltersetIcon from "$lib/features/filters/FiltersetIcon.svelte";
 	import { filterTitle } from "$lib/features/filters/filtersetUtils.svelte";
 	import type { AnyFilterset } from "$lib/features/filters/filtersets";
-	import { getIconBackground } from "$lib/services/uicons.svelte";
+
 	import RoutesStartingHere from "@/components/ui/popups/route/RoutesStartingHere.svelte";
 
-	export { image, overview, main };
+	import GymDefenderRow from "./GymDefenderRow.svelte";
+	export { image, headerDetails, main };
 
 	export function getPopupPropsGym(data: MapData) {
 		data = data as GymData;
@@ -70,7 +62,7 @@
 			type: m.pogo_gym(),
 			title: data.name ?? m.unknown_gym(),
 			image,
-			overview,
+			headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -128,53 +120,25 @@
 	/>
 {/snippet}
 
-{#snippet overview(d: MapData)}
+{#snippet headerDetails(d: MapData)}
 	{@const data = d as GymData}
-
-	{#if !data.isRouteEndpoint}
-		{@const activeRaid = isActiveRaid(data)}
-
-		{#if activeRaid}
-			<OverviewCard Icon={RaidIcon} title={m.raid()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<ImagePopup class="h-12" src={getRaidIcon(data)} alt={getRaidTitle(data)} />
-					{/snippet}
-
-					{#snippet title()}
-						{getRaidTitle(data)}
-					{/snippet}
-
-					{#snippet extra()}
-						<span class="flex items-center gap-1">
-							<Clock class="size-3" />
-							<Countdown expireTime={getRaidExpire(data)} />
-						</span>
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
-		{/if}
-
-		{#if data.team_id && data.team_id !== 0 && !isFortOutdated(data.updated)}
-			<OverviewCard Icon={Shield} title={m.defending()}>
-				<BigIconOverview>
-					{#snippet image()}
-						<ImagePopup
-							class="size-12"
-							src={getIconTeam(data.team_id ?? 0)}
-							alt={mTeam(data.team_id)}
-						/>
-					{/snippet}
-
-					{#snippet title()}
-						{m.gym_team({ team: mTeam(data.team_id) })}
-					{/snippet}
-
-					{#snippet extra()}
-						{m.gym_slots({ occupied: getOccupiedSlots(data), total: GYM_SLOTS })}
-					{/snippet}
-				</BigIconOverview>
-			</OverviewCard>
+	{#if !data.isRouteEndpoint && !isFortOutdated(data.updated)}
+		{#if isActiveRaid(data)}
+			<div class="mt-2 flex items-center gap-2 text-sm">
+				<ImagePopup class="size-9 shrink-0" src={getRaidIcon(data)} alt="" />
+				<div class="min-w-0">
+					<p class="font-semibold">
+						{getRaidTitle(data)}{#if data.raid_pokemon_id}<span
+								class="ml-2 text-xs font-normal text-muted-foreground"
+								>{mRaid(data.raid_level)}</span
+							>{/if}
+					</p>
+					<p class="text-xs text-muted-foreground">
+						{isRaidHatched(data) ? m.raid_ends() : m.raid_starts()}
+						<Countdown expireTime={getRaidExpire(data)} />
+					</p>
+				</div>
+			</div>
 		{/if}
 	{/if}
 {/snippet}
@@ -198,37 +162,16 @@
 				</IconValue>
 			</BasicMainCard>
 		{:else}
-			<TitledMainSection Icon={RaidIcon} title={m.raid()} disabled={!activeRaid}>
-				<BasicMainCard>
-					{#if !hasRaidData(data)}
-						{m.no_raid_at_gym()}
-					{:else if !activeRaid}
-						<IconValue Icon={Clock}>
-							{m.last_raid_ended({
-								time: timestampToLocalTime(data.raid_end_timestamp, {
-									showDate: true,
-									showSeconds: false,
-									longMonth: true
-								})
-							})}
-						</IconValue>
-					{:else}
-						<MainCardBigIcon
-							src={getRaidIcon(data)}
-							alt={getRaidTitle(data)}
-							title={getRaidTitle(data)}
-						/>
-
-						<div class="space-y-5">
+			{#if activeRaid}<TitledMainSection Icon={RaidIcon} title={m.raid()}>
+					<BasicMainCard>
+						<div class="space-y-3">
 							<!--Expiration-->
 							<div>
 								<IconValue class="mb-1" Icon={Clock}>
 									{m.battle_time()}
 								</IconValue>
 
-								<div
-									class="mt-2 border-2 border-accent-highlight rounded-md px-3 py-2 text-center font-semibold"
-								>
+								<div class="text-sm tabular-nums">
 									{m.range_to({
 										x: timestampToLocalTime(data.raid_battle_timestamp),
 										y: timestampToLocalTime(data.raid_end_timestamp)
@@ -239,7 +182,7 @@
 							<!--Hatch Prediction-->
 							{#if !data.raid_pokemon_id && data.raid_level}
 								{@const possibleBosses = getActiveRaidsForLevel(data.raid_level)}
-								{#if possibleBosses}
+								{#if possibleBosses?.length}
 									<div>
 										<IconValue class="" Icon={BadgeCheck}>
 											{#if possibleBosses.length === 1}
@@ -287,8 +230,6 @@
 							<!--Raid Attributes-->
 							{#if data.raid_pokemon_id}
 								<div class="space-y-3">
-									<StatsMainCardEntry Icon={Star} name={m.tier()} value={mRaid(data.raid_level)} />
-
 									{#if data.raid_pokemon_cp != null}
 										<StatsMainCardEntry
 											Icon={ShieldHalf}
@@ -298,7 +239,7 @@
 									{/if}
 									<StatsMainCardEntry Icon={Swords} name={m.popup_pokemon_moves()}>
 										{#snippet value()}
-											<p class="flex gap-2">
+											<p class="flex flex-wrap justify-end gap-x-2">
 												{#if data.raid_pokemon_move_1 && data.raid_pokemon_move_2}
 													<span>{mMove(data.raid_pokemon_move_1)}</span>
 													<span>·</span>
@@ -312,132 +253,45 @@
 								</div>
 							{/if}
 						</div>
-					{/if}
-				</BasicMainCard>
-			</TitledMainSection>
+					</BasicMainCard>
+				</TitledMainSection>{/if}
 
-			<TitledMainSection
-				Icon={Shield}
-				title={m.gym_members()}
-				disabled={!data.team_id || data.team_id === 0}
-			>
-				<BasicMainCard>
-					{#if !data.team_id || data.team_id === 0}
-						{m.no_defenders_at_gym()}
-					{:else}
-						<MainCardBigIcon
-							src={getIconTeam(data.team_id)}
-							alt={mTeam(data.team_id)}
-							title={mTeam(data.team_id)}
-						/>
-
-						<div class="mt-4 space-y-3">
-							<StatsMainCardEntry
-								Icon={UsersRound}
-								name={m.slots_occupied()}
-								value="{getOccupiedSlots(data)}/{GYM_SLOTS}"
-							/>
-						</div>
-
-						{#if data.defenders?.length}
-							<div class="-mx-4 mt-2">
-								<div class="flex w-full gap-3 overflow-x-auto px-4 *:shrink-0">
-									{#each data.defenders as defender}
-										<div class="min-w-64 max-w-80 rounded-md bg-accent-highlight p-5">
-											<div class="flex items-center gap-3">
-												<div class="size-12 shrink-0 relative">
-													<ImagePopup
-														class="absolute size-full z-10"
-														src={getIconPokemon(defender)}
-														alt={mPokemon(defender)}
-													/>
-													{#if defender.background}
-														<ImagePopup
-															class="absolute size-12 mask-[radial-gradient(circle,black_35%,transparent_70%)]"
-															src={resize(getIconBackground(defender.background), { width: 64 })}
-															alt={m.background()}
-														/>
-													{/if}
-												</div>
-
-												<div class="min-w-0">
-													<p class="truncate font-semibold">
-														{mPokemon(defender)}
-													</p>
-													<div class="text-muted-foreground">
-														<div class="flex gap-1.5 items-center">
-															<div class="relative size-6 text-muted-foreground">
-																<Heart class="absolute inset-0 size-full stroke-1" />
-																<div
-																	class="absolute bottom-0 left-0 w-full overflow-hidden"
-																	style:height="{defender.motivation_now * 100}%"
-																>
-																	<Heart
-																		class="absolute bottom-0 left-0 size-6 fill-rose-400 dark:fill-rose-800 stroke-1"
-																	/>
-																</div>
-															</div>
-															<p>
-																{formatPercentage(defender.motivation_now, {
-																	maxDecimals: 0,
-																	minDecimals: 0
-																})}
-															</p>
-														</div>
-													</div>
-												</div>
-											</div>
-
-											<div class="space-y-1 mt-4">
-												<StatsMainCardEntry Icon={SquareEqual} name={m.cp()}>
-													{#snippet value()}
-														<p>
-															<span>
-																{defender.cp_now}
-															</span>
-															<span class="text-muted-foreground">
-																/ {defender.cp_when_deployed}
-															</span>
-														</p>
-													{/snippet}
-												</StatsMainCardEntry>
-												<StatsMainCardEntry
-													Icon={Swords}
-													name={m.won()}
-													value={defender.battles_won}
-												/>
-												<StatsMainCardEntry
-													Icon={Shield}
-													name={m.lost()}
-													value={defender.battles_lost}
-												/>
-												<StatsMainCardEntry
-													Icon={Candy}
-													name={m.fed()}
-													value={defender.times_fed}
-												/>
-												<StatsMainCardEntry Icon={Clock} name={m.defender_placed()}>
-													{#snippet value()}
-														{#if defender.deployed_time < currentTimestamp() - 60 * 60 * 24}
-															{timestampToLocalTime(defender.deployed_time, {
-																showDate: true,
-																dayLowerCase: false,
-																showSeconds: false
-															})}
-														{:else}
-															<Countdown expireTime={defender.deployed_time} />
-														{/if}
-													{/snippet}
-												</StatsMainCardEntry>
-											</div>
-										</div>
-									{/each}
-								</div>
+			{#if data.team_id != null || data.availble_slots != null || data.defenders?.length}
+				<section aria-label={m.gym_members()}>
+					<h2
+						class="mb-2 flex flex-wrap items-center gap-2 border-l-2 border-current pl-2 font-semibold"
+						class:text-blue-600={data.team_id === 1}
+						class:dark:text-blue-400={data.team_id === 1}
+						class:text-red-600={data.team_id === 2}
+						class:dark:text-red-400={data.team_id === 2}
+						class:text-amber-700={data.team_id === 3}
+						class:dark:text-yellow-400={data.team_id === 3}
+						class:text-muted-foreground={!data.team_id}
+					>
+						{#if data.team_id != null}<ImagePopup
+								class="size-5"
+								src={getIconTeam(data.team_id)}
+								alt=""
+							/>{mTeam(data.team_id)}{:else}{m.gym_members()}{/if}
+						{#if data.availble_slots != null}<span
+								class="text-sm font-normal tabular-nums"
+								title={m.slots_occupied()}>{getOccupiedSlots(data)}/{GYM_SLOTS}</span
+							>{/if}
+					</h2>
+					{#if data.defenders?.length}
+						{#key data.mapId}
+							<div
+								class="divide-y divide-border overflow-hidden rounded-lg border border-border"
+								class:border-blue-500={data.team_id === 1}
+								class:border-red-500={data.team_id === 2}
+								class:border-yellow-500={data.team_id === 3}
+							>
+								{#each data.defenders as defender}<GymDefenderRow {defender} />{/each}
 							</div>
-						{/if}
+						{/key}
 					{/if}
-				</BasicMainCard>
-			</TitledMainSection>
+				</section>
+			{/if}
 		{/if}
 	{/if}
 

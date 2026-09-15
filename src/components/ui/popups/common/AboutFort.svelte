@@ -3,10 +3,8 @@
 	import { openWayfarerMap } from "$lib/features/wayfarerMap.svelte";
 	import { openFortDetailsModal } from "@/components/ui/popups/common/FortDetailsModal.svelte";
 	import Button from "@/components/ui/input/Button.svelte";
-	import BasicMainCard from "@/components/ui/popups/common/BasicMainCard.svelte";
 	import ExpandableDescription from "@/components/ui/popups/common/ExpandableDescription.svelte";
 	import IconValue from "@/components/ui/popups/common/IconValue.svelte";
-	import StatsMainCard from "@/components/ui/popups/common/StatsMainCard.svelte";
 	import TitledMainSection from "@/components/ui/popups/common/TitledMainSection.svelte";
 	import UpdatedTimes from "@/components/ui/popups/common/UpdatedTimes.svelte";
 	import { ArrowRight, BadgeEuro, Info } from "@lucide/svelte";
@@ -40,18 +38,8 @@
 
 <TitledMainSection Icon={Info} {title}>
 	{#if !isRouteEndpoint}
-		<BasicMainCard>
-			{#if !name}
-				<p class="-mb-2 text-muted-foreground">
-					{m.unknown_details()}
-				</p>
-			{:else}
-				<p class="mb-2 font-semibold">
-					{name}
-				</p>
-
-				<ExpandableDescription {description} />
-			{/if}
+		<div class="space-y-2">
+			{#if description}<ExpandableDescription {description} />{/if}
 
 			{#if sponsorId || partnerId}
 				<IconValue class="mt-2" Icon={BadgeEuro}>
@@ -86,14 +74,14 @@
 				</div>
 			{/if}
 
-			<Button class="mt-3 mb-2 w-full" variant="link" onclick={openWayfarerMap}>
+			<Button class="px-0!" size="sm" variant="link" onclick={openWayfarerMap}>
 				{m.go_to_wayfarer_map()}
 				<ArrowRight class="size-3.5" />
 			</Button>
-		</BasicMainCard>
+		</div>
 	{/if}
 
-	<StatsMainCard class="mt-4">
+	<div class="mt-3 text-sm">
 		<UpdatedTimes {updated} {lastModified} {firstSeen} />
-	</StatsMainCard>
+	</div>
 </TitledMainSection>
