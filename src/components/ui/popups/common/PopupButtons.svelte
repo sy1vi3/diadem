@@ -57,7 +57,7 @@
 	);
 </script>
 
-<div class="flex px-4 gap-2 w-full overflow-x-auto pb-2">
+<div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] px-4 gap-2 w-full pb-2">
 	<PopupButton
 		variant="default"
 		Icon={Navigation}

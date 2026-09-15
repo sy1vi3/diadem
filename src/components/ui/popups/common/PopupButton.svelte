@@ -45,8 +45,13 @@
 	}
 </script>
 
-<div class="flex gap-0.5 [&>*:first-child:not(:last-child)]:rounded-r-none" role="group">
-	<Button size="default" variant="secondary" class="items-center" {...rest}>
+<div class="flex min-w-0 gap-0.5 [&>*:first-child:not(:last-child)]:rounded-r-none" role="group">
+	<Button
+		size="sm"
+		variant="secondary"
+		class="items-center flex-1 min-w-0 whitespace-normal! leading-tight"
+		{...rest}
+	>
 		{#if !active}
 			<Icon class="size-4 mb-0.5" />
 			{label}
@@ -60,7 +65,13 @@
 		<DropdownMenu.Root bind:open={dropdownOpen} onOpenChange={setDropdownOpen}>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button class="px-3! rounded-l-none" size="default" variant="secondary" {...props}>
+					<Button
+						aria-label={label}
+						class="px-2! rounded-l-none"
+						size="sm"
+						variant="secondary"
+						{...props}
+					>
 						<Ellipsis class="size-4 mt-0.5" />
 					</Button>
 				{/snippet}
