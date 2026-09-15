@@ -2,7 +2,13 @@ import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/features/activeSearch.svelte.js", () => ({ getActiveSearch: () => undefined }));
-vi.mock("@/lib/map/featuresGen.svelte", () => ({ updateFeatures: vi.fn() }));
+vi.mock("@/lib/map/featuresGen.svelte", () => ({
+	updateFeatures: vi.fn(),
+	hasExpiredFeatures: () => state.expired
+}));
+vi.mock("@/lib/mapObjects/mapBounds", () => ({
+	getBounds: () => ({ minLat: 0, maxLat: 1, minLon: 0, maxLon: 1 })
+}));
 vi.mock("@/lib/map/map.svelte", () => ({ getMap: () => ({ getZoom: () => 15 }) }));
 vi.mock("@/lib/mapObjects/dataLimitState.svelte", () => ({
 	clearAllDataLimits: vi.fn(),
@@ -10,12 +16,13 @@ vi.mock("@/lib/mapObjects/dataLimitState.svelte", () => ({
 	getDataLimit: () => undefined,
 	setDataLimit: vi.fn()
 }));
-const state = vi.hoisted(() => ({ replace: vi.fn(), add: vi.fn() }));
+const state = vi.hoisted(() => ({ replace: vi.fn(), add: vi.fn(), revision: 0, expired: false }));
 vi.mock("@/lib/mapObjects/mapObjectsState.svelte.js", () => ({
 	addMapObjects: state.add,
 	clearAllMapObjects: vi.fn(),
 	clearMapObjects: vi.fn(),
 	getMapObjects: () => ({}),
+	getMapObjectsRevision: () => state.revision,
 	replaceMapObjects: state.replace
 }));
 vi.mock("@/lib/mapObjects/s2cells.js", () => ({ getS2CellMapObjects: () => [] }));
@@ -45,6 +52,7 @@ vi.mock("@/lib/services/config/config", () => ({
 vi.mock("@/lib/native/runtime", () => ({ isNative: () => false }));
 
 import {
+	updateAllMapObjects,
 	applyMapObjectResponse,
 	clearMap,
 	fetchForts,
@@ -145,5 +153,37 @@ describe("fetchForts", () => {
 		const results = await fetchForts([plan], bounds);
 		applyMapObjectResponse(plan, results.get(MapObjectType.GYM));
 		expect(state.replace).toHaveBeenCalledWith([], MapObjectType.GYM, 9);
+	});
+});
+
+describe("idle delta rendering", () => {
+	it.each(["unchanged", "changed", "expired"])("handles %s polls", async (scenario) => {
+		const { updateFeatures } = await import("@/lib/map/featuresGen.svelte");
+		state.revision = 0;
+		state.expired = false;
+		state.add.mockImplementation((objects: any[]) => {
+			if (objects.length) state.revision++;
+		});
+		let changed = false;
+		fetchMock.mockImplementation(async () =>
+			jsonResponse({
+				gym: {
+					status: 200,
+					result: {
+						examined: 1,
+						data: changed
+							? [{ id: "g", mapId: "gym-g", type: "gym", lat: 1, lon: 1, team_id: 2 }]
+							: []
+					}
+				},
+				pokestop: { status: 200, result: { examined: 0, data: [] } }
+			})
+		);
+		await updateAllMapObjects(true, false);
+		vi.mocked(updateFeatures).mockClear();
+		changed = scenario === "changed";
+		state.expired = scenario === "expired";
+		await updateAllMapObjects(true, true);
+		expect(updateFeatures).toHaveBeenCalledTimes(scenario === "unchanged" ? 0 : 1);
 	});
 });
