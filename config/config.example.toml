@@ -84,6 +84,8 @@ serverId = "1359028304128245934"
 #     minor_map_object* (map objects with no sub-features) / nest, tappable, s2cell, spawnpoint, route
 #   tool* / scout, coverage_map, wayfarer_map
 #   ui* / search, weather
+# map_data_everywhere: grant without areas to make existing map-data permissions
+# worldwide. Does not grant additional features, scouting, or administrative tools.
 #
 # Below are some examples
 

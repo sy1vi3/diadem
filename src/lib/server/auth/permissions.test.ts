@@ -69,3 +69,19 @@ it("fails closed without a Discord token", async () => {
 	expect(await updatePermissions(user, "", fetch)).toEqual({ areas: [], everywhere: [] });
 	expect(mocks.guild).not.toHaveBeenCalled();
 });
+
+it("combines worldwide visibility with existing feature grants across guilds", async () => {
+	mocks.rules.unshift({
+		guildId: "south-server",
+		roleId: "worldwide",
+		features: [Features.MAP_DATA_EVERYWHERE]
+	});
+	mocks.guild.mockImplementation(async (guild: string) => ({
+		roles: guild === "north-server" ? ["north-role"] : ["worldwide"]
+	}));
+	const perms = await updatePermissions(user, "token", fetch);
+	expect(perms.everywhere).toContain(Features.POKEMON);
+	expect(perms.everywhere).toContain(Features.POKEMON_PVP);
+	expect(perms.everywhere).not.toContain(Features.SCOUT);
+	expect(perms.everywhere).not.toContain(Features.RAID);
+});
