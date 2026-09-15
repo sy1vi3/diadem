@@ -105,7 +105,7 @@
 			class:pt-18={isSearchViewActive()}
 		>
 			<div
-				class="z-10 h-full relative overflow-y-auto rounded-l-xl border border-border bg-card pt-6 pointer-events-auto"
+				class="z-10 h-full relative overflow-y-auto [scrollbar-gutter:stable_both-edges] rounded-l-xl border border-border bg-card pt-6 pointer-events-auto"
 			>
 				<PopupBaseStatic
 					coords={popupCoords}

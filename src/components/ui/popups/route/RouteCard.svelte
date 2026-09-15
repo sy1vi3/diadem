@@ -54,7 +54,7 @@
 	}
 </script>
 
-<details class="group">
+<details class="group min-w-0 [overflow-wrap:anywhere]">
 	<summary
 		class="flex cursor-pointer list-none items-center gap-3 px-3 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
 	>

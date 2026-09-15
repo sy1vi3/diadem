@@ -133,7 +133,7 @@
 	{/if}
 </div>
 
-<div class="px-4 pt-2 mt-2 pb-6 space-y-7 overflow-y-auto">
+<div data-popup-body class="min-w-0 px-4 pt-2 mt-2 pb-6 space-y-7 overflow-y-auto">
 	{#if props && data}
 		{@render props.main(data)}
 	{/if}
