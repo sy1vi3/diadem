@@ -89,3 +89,12 @@ describe("site defaults and saved user settings", () => {
 		expect(decode(options.body)).toEqual(saved);
 	});
 });
+
+it("trims old saved search history while preserving most recent entries", () => {
+	const history = Array.from({ length: 1000 }, (_, i) => ({
+		key: String(i),
+		name: "Location " + i
+	})) as any;
+	setUserSettings({ recentSearches: history });
+	expect(getUserSettings().recentSearches).toEqual(history.slice(0, 20));
+});
