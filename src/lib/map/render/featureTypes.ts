@@ -14,6 +14,7 @@ export type MapObjectIconProperties = {
 	imageUrl: string;
 	imageId: string;
 	imageSize: number;
+	normalize?: boolean;
 	selectedScale: number;
 	dimmed: boolean;
 	imageOffset?: [number, number];
@@ -94,7 +95,7 @@ export function getIconFeature(
 ): MapObjectIconFeature {
 	let imageUrl = properties.imageUrl;
 	if (!imageUrl.startsWith("data:") && imageUrl && !imageUrl.includes("w=")) {
-		imageUrl = resize(imageUrl, { width: 64 });
+		imageUrl = resize(imageUrl, { width: 64, normalize: properties.normalize });
 	}
 
 	// fixes some warnings about types
@@ -111,7 +112,8 @@ export function getIconFeature(
 			...rest,
 			...(hasOffset ? { imageOffset } : {}),
 			imageUrl,
-			imageId: properties.imageId ?? properties.imageUrl,
+			imageId:
+				(properties.imageId ?? properties.imageUrl) + (properties.normalize ? "/normalized" : ""),
 			dimmed: properties.dimmed ?? false,
 			type: FeatureTypes.ICON
 		},
