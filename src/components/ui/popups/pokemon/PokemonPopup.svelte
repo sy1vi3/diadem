@@ -42,13 +42,11 @@
 	import { filterTitle } from "$lib/features/filters/filtersetUtils.svelte";
 	import {
 		ArrowLeftRight,
-		Award,
 		BicepsFlexed,
-		ChartColumn,
+		ChevronDown,
 		CircleDot,
 		CircleSmall,
 		Expand,
-		Goal,
 		Info,
 		Mars,
 		Ruler,
@@ -354,79 +352,67 @@
 		{/if}
 	</div>
 
-	{#if showGreat(data) || showUltra(data) || showLittle(data)}
+	{@const pvpEntries = getPvpPopupEntries(data)}
+	{#if pvpEntries.length}
 		<TitledMainSection Icon={Swords} title={m.pvp_performance()}>
-			<BasicMainCard>
-				<div class="-mx-4 mt-2">
-					<div class="flex w-full gap-3 overflow-x-auto px-4 *:shrink-0">
-						{#each getPvpPopupEntries(data) as pokemon}
-							<div class="min-w-80 max-w-96 rounded-md bg-accent-highlight px-5 py-4">
-								<div class="flex items-center gap-3">
-									<div class="size-12 shrink-0 relative">
-										<ImagePopup
-											class="size-11 -mt-1 -ml-1"
-											src={getIconPokemon(pokemon)}
-											alt={mPokemon(pokemon)}
-										/>
-										<ImagePopup
-											class="absolute size-7 bottom-0 right-0"
-											src={getIconLeague(pokemon.league)}
-											alt={mLeague(pokemon.league)}
-										/>
-									</div>
-
-									<div class="min-w-0">
-										<p class="truncate font-semibold">
-											{mPokemon(pokemon)}
-										</p>
-									</div>
-								</div>
-
-								<div class="space-y-1 mt-2">
-									<StatsMainCardEntry
-										Icon={Award}
-										name={m.league()}
-										value={mLeague(pokemon.league)}
-									/>
-
-									<StatsMainCardEntry Icon={ChartColumn} name={m.performance()}>
-										{#snippet value()}
-											<p>
-												<span class="text-muted-foreground">
-													{formatPercentage(pokemon.percentage, {
+			{#key data.mapId}
+				<div class="space-y-3">
+					{#each [...new Set(pvpEntries.map((entry) => entry.league))] as league}
+						<section aria-label={mLeague(league)}>
+							<h3 class="mb-1.5 flex items-center gap-2 text-sm font-medium">
+								<ImagePopup class="size-5" src={getIconLeague(league)} alt="" />
+								{mLeague(league)}
+							</h3>
+							<div class="divide-y divide-border overflow-hidden rounded-lg border border-border">
+								{#each pvpEntries.filter((entry) => entry.league === league) as pokemon}
+									<details class="group">
+										<summary
+											class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+										>
+											<ImagePopup class="size-10 shrink-0" src={getIconPokemon(pokemon)} alt="" />
+											<span class="min-w-0 flex-1">
+												<span class="block text-sm font-medium break-words"
+													>{mPokemon(pokemon)}</span
+												>
+												<span class="block text-xs text-muted-foreground"
+													>{m.considered_max_level()}: {formatNumber(pokemon.cap)}</span
+												>
+											</span>
+											<span class="shrink-0 text-right tabular-nums">
+												<span
+													class="block font-semibold"
+													class:text-amber-600={pokemon.rank === 1}
+													class:dark:text-amber-400={pokemon.rank === 1}
+													>{m.rank_x({ rank: pokemon.rank })}</span
+												>
+												<span class="block text-xs text-muted-foreground" title={m.performance()}
+													>{formatPercentage(pokemon.percentage, {
 														minDecimals: 0,
 														maxDecimals: 1
-													})} ·
-												</span>
-												<span>
-													{m.rank_x({ rank: pokemon.rank })}
-												</span>
-											</p>
-										{/snippet}
-									</StatsMainCardEntry>
-
-									<StatsMainCardEntry Icon={Goal} name={m.pvp_target()}>
-										{#snippet value()}
-											<p>
-												<span class="text-muted-foreground">
-													{m.pogo_level({ level: formatNumber(pokemon.level) })} ·
-												</span>
-												<span>
-													{m.pogo_cp({ cp: pokemon.cp })}
-												</span>
-											</p>
-										{/snippet}
-									</StatsMainCardEntry>
-								</div>
-
-								<IconValue Icon={Info} class="text-muted-foreground mt-3">
-									{m.considered_max_level()}: {pokemon.cap}
-								</IconValue>
+													})}</span
+												>
+											</span>
+											<ChevronDown
+												class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+											/>
+										</summary>
+										<div
+											class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border bg-accent/30 px-3 py-2 text-sm"
+										>
+											<span class="text-muted-foreground">{m.pvp_target()}</span>
+											<span class="tabular-nums"
+												><span class="font-medium">{m.pogo_cp({ cp: pokemon.cp })}</span> · {m.pogo_level(
+													{ level: formatNumber(pokemon.level) }
+												)}</span
+											>
+										</div>
+									</details>
+								{/each}
 							</div>
-						{/each}
-					</div>
+						</section>
+					{/each}
 				</div>
-			</BasicMainCard>
+			{/key}
 		</TitledMainSection>
 	{/if}
 
