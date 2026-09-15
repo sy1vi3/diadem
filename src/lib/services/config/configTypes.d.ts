@@ -197,7 +197,20 @@ export type ServerConfig = {
 	};
 };
 
+/** Exact public origins; backend credentials and permissions remain shared. */
+export type SiteConfig = {
+	origin: string;
+	client: {
+		general?: Partial<General>;
+		discord?: Partial<ClientDiscord>;
+		mapPositions?: Partial<MapPositions>;
+		tools?: Partial<ClientConfig["tools"]>;
+		defaultFilters?: DefaultFilters;
+	};
+};
+
 export type Config = {
+	sites?: SiteConfig[];
 	server: ServerConfig;
 	client: ClientConfig;
 };
