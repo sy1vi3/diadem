@@ -16,21 +16,10 @@
 	} = $props();
 </script>
 
-<div class="flex justify-between items-center gap-3 flex-wrap gap-y-2">
-	<div
-		class="justify-center font-medium flex gap-2 items-center rounded-md bg-accent-highlight- border-2 border-accent-highlight pl-4 pr-6 py-2 grow basis-1 whitespace-nowrap"
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums">
+	{#if showIcon}<Clock class="size-4 text-muted-foreground" />{/if}
+	<span class="font-medium"><Countdown expireTime={expire} /></span>
+	<span class="text-muted-foreground"
+		>{timestampToLocalTime(expire, { showSeconds, showDate, dayLowerCase: false })}</span
 	>
-		{#if showIcon}
-			<Clock class="size-4" />
-		{/if}
-		<p>
-			{timestampToLocalTime(expire, { showSeconds, showDate, dayLowerCase: false })}
-		</p>
-	</div>
-
-	<div
-		class="justify-center font-medium flex gap-2 items-center rounded-md bg-accent-highlight- border-2 border-accent-highlight pl-4 pr-6 py-2 grow basis-1 shrink"
-	>
-		<Countdown expireTime={expire} />
-	</div>
 </div>

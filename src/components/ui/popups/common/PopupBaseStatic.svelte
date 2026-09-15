@@ -8,6 +8,8 @@
 		title: string;
 		image: Snippet<[MapData]>;
 		overview?: Snippet<[MapData]>;
+		headerDetails?: Snippet<[MapData]>;
+		titleDetails?: Snippet<[MapData]>;
 		main: Snippet<[MapData]>;
 	};
 </script>
@@ -52,15 +54,16 @@
 	}
 </script>
 
-<div class="flex gap-6 px-4">
+<div class="flex gap-3 px-4 pr-24">
 	{#if props && data}
 		{@render props.image(data)}
 		<div class="min-w-0">
 			<p class="text-muted-foreground text-sm font-medium">
 				{props.type}
 			</p>
-			<h1 class="line-clamp-2 break-words text-xl font-semibold">
-				{props.title}
+			<h1 class="flex flex-wrap items-center gap-x-2 break-words text-xl font-semibold">
+				<span class="min-w-0 max-w-full">{props.title}</span>
+				{#if props.titleDetails}{@render props.titleDetails(data)}{/if}
 			</h1>
 		</div>
 	{/if}
@@ -99,6 +102,10 @@
 		</Button>
 	</div>
 </div>
+
+{#if props && data && props.headerDetails}
+	<div class="px-4 mt-2">{@render props.headerDetails(data)}</div>
+{/if}
 
 {#if props && data && props.overview}
 	<div class="w-full">
