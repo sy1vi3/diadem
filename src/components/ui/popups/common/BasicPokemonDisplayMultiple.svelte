@@ -39,9 +39,9 @@
 </script>
 
 <div class="-mx-4 mt-2 {class_}">
-	<div class="mt-2 flex w-full gap-3 overflow-x-auto px-4 *:shrink-0">
+	<div class="mt-2 flex flex-wrap w-full gap-2 px-4">
 		{#each pokemon as pokemonEntry, index (getPokemonKey(pokemonEntry, index))}
-			<div class="rounded-md bg-accent-highlight p-4">
+			<div class="flex items-center gap-2 rounded-md bg-accent-highlight p-2">
 				<div class="size-10">
 					<ImagePopup
 						class="size-10"
@@ -49,6 +49,7 @@
 						alt={mPokemon(pokemonEntry)}
 					/>
 				</div>
+				<span class="text-sm">{mPokemon(pokemonEntry)}</span>
 			</div>
 		{/each}
 	</div>
