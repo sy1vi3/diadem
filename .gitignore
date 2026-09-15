@@ -54,3 +54,5 @@ docker-compose.yml
 
 # F-Droid repo cloned locally
 /fdroiddata
+
+/debug/
