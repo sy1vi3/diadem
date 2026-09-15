@@ -11,7 +11,6 @@
 		getPokemonStats as getMasterPokemonStats,
 		type PokemonStats
 	} from "$lib/features/masterStats.svelte";
-	import { mPokemon } from "$lib/services/ingameLocale";
 
 	let {
 		data
@@ -25,24 +24,22 @@
 	let statsEntry = $derived(stats?.entry);
 </script>
 
-<TitledMainSection Icon={ChartColumn} title={m.stats()}>
-	{#snippet rightPart()}
-		<p class="text-sm text-muted-foreground">
-			{#if stats}
-				{m.last_x_days({ days: formatNumber(stats.total.days) })} ·
-			{/if}
-			{#if statsEntry}
-				{m.total_seen()}: {formatNumberCompact(
-					statsEntry?.shiny?.total ?? statsEntry?.spawns?.count
-				)}
-			{/if}
-		</p>
-	{/snippet}
+{#if stats && statsEntry}
+	<TitledMainSection Icon={ChartColumn} title={m.stats()}>
+		{#snippet rightPart()}
+			<p class="text-sm text-muted-foreground">
+				{#if stats}
+					{m.last_x_days({ days: formatNumber(stats.total.days) })} ·
+				{/if}
+				{#if statsEntry}
+					{m.total_seen()}: {formatNumberCompact(
+						statsEntry?.shiny?.total ?? statsEntry?.spawns?.count
+					)}
+				{/if}
+			</p>
+		{/snippet}
 
-	<StatsMainCard>
-		{#if !statsEntry || !stats}
-			{m.stats_unavailable({ name: mPokemon(data) })}
-		{:else}
+		<StatsMainCard>
 			<StatsMainCardEntry
 				Icon={Sparkles}
 				name={statsEntry.shiny && statsEntry.shiny.shinies > 0 ? m.shiny_rate() : m.contest_shiny()}
@@ -65,6 +62,6 @@
 					{/if}
 				{/snippet}
 			</StatsMainCardEntry>
-		{/if}
-	</StatsMainCard>
-</TitledMainSection>
+		</StatsMainCard>
+	</TitledMainSection>
+{/if}

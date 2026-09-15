@@ -312,25 +312,23 @@
 	{/if}
 
 	{#if showMatchingFiltersets()}
-		<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>
-			<BasicMainCard>
-				{@const filtersets = getMatchingFiltersets(data)}
-
-				{#if filtersets.length === 0}
-					<p>{m.filters_dont_match_gym()}</p>
-				{/if}
-				<div class="flex flex-wrap gap-3">
-					{#each filtersets as filterset (filterset.id)}
-						<div
-							class="flex gap-3 font-medium items-center bg-accent-highlight px-4 py-2 rounded-md"
-						>
-							<FiltersetIcon {filterset} size={4} />
-							{filterTitle(filterset)}
-						</div>
-					{/each}
-				</div>
-			</BasicMainCard>
-		</TitledMainSection>
+		{@const filtersets = getMatchingFiltersets(data)}
+		{#if filtersets.length > 0}
+			<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>
+				<BasicMainCard>
+					<div class="flex flex-wrap gap-3">
+						{#each filtersets as filterset (filterset.id)}
+							<div
+								class="flex gap-3 font-medium items-center bg-accent-highlight px-4 py-2 rounded-md"
+							>
+								<FiltersetIcon {filterset} size={4} />
+								{filterTitle(filterset)}
+							</div>
+						{/each}
+					</div>
+				</BasicMainCard>
+			</TitledMainSection>
+		{/if}
 	{/if}
 
 	<AboutFort

@@ -50,12 +50,10 @@
 		Info,
 		Mars,
 		Ruler,
-		RulerDimensionLine,
 		Shrink,
 		SlidersHorizontal,
 		Spotlight,
 		Swords,
-		Trash2,
 		Venus
 	} from "@lucide/svelte";
 	import FiltersetIcon from "$lib/features/filters/FiltersetIcon.svelte";
@@ -108,24 +106,6 @@
 		);
 	}
 
-	function getPvpNotice(data: PokemonData) {
-		const leagues = [
-			{ league: m.little_league(), rank: getBestRank(data, League.LITTLE) },
-			{ league: m.great_league(), rank: getBestRank(data, League.GREAT) },
-			{ league: m.ultra_league(), rank: getBestRank(data, League.ULTRA) }
-		]
-			.filter(({ rank }) => rank > 0 && rank <= 5)
-			.map(({ league }) => league);
-
-		if (leagues.length === 0) return undefined;
-		if (leagues.length === 1) return leagues[0];
-
-		return m.listed_and({
-			part1: leagues.slice(0, leagues.length - 1).join(", "),
-			part2: leagues[leagues.length - 1]
-		});
-	}
-
 	function getPvpPopupEntries(data: PokemonData): PvpPopupEntry[] {
 		const activeFilter = getActivePokemonFilter();
 		const enabledFilters = activeFilter?.filters.filter((filter) => filter.enabled) ?? [];
@@ -153,10 +133,6 @@
 				return a.cap - b.cap;
 			});
 	}
-</script>
-
-<script>
-	import IconValue from "@/components/ui/popups/common/IconValue.svelte";
 </script>
 
 {#snippet image(d: MapData)}
@@ -229,7 +205,6 @@
 	{@const data = d as PokemonData}
 	{@const stats: PokemonStats | undefined = getMasterPokemonStats(data.pokemon_id, data.form ?? 0)}
 	{@const statsEntry = stats?.entry}
-	{@const pvpNotice = getPvpNotice(data)}
 
 	{#if !hasTimer(data)}
 		<p class="text-xs text-muted-foreground">
@@ -239,7 +214,7 @@
 		</p>
 	{/if}
 
-	<div class="space-y-2">
+	<div class="space-y-2 empty:hidden">
 		<!--Special seen types-->
 		{#if data.seen_type?.includes("lure")}
 			<BasicMainCard class="flex gap-4 font-medium items-center justify-center">
@@ -268,36 +243,11 @@
 			</BasicMainCard>
 		{/if}
 
-		<!--XXL/XXS notice-->
-		{#if data.size && [1, 5].includes(data.size)}
-			<BasicMainCard class="flex gap-2 font-medium justify-center">
-				<RulerDimensionLine class="size-4 mt-1" />
-				{#if data.size === 1}
-					{m.notice_xxs({ name: speciesName(data) })}
-				{:else if data.size === 5}
-					{m.notice_xxl({ name: speciesName(data) })}
-				{/if}
-			</BasicMainCard>
-		{/if}
-
 		<!--Mighty-->
 		{#if data.strong}
 			<BasicMainCard class="flex gap-2 justify-center">
 				<BicepsFlexed class="size-4 mt-0.5" />
 				{m.notice_mighty()}
-			</BasicMainCard>
-		{/if}
-
-		<!--IV notices-->
-		{#if data.iv != null && data.iv > 99}
-			<BasicMainCard class="flex gap-2 font-medium justify-center">
-				<span> 💯 </span>
-				{m.notice_hundo({ name: speciesName(data) })}
-			</BasicMainCard>
-		{:else if data.iv === 0}
-			<BasicMainCard class="flex gap-2 font-medium justify-center">
-				<Trash2 class="size-4 mt-1" />
-				{m.notice_nundo({ name: speciesName(data) })}
 			</BasicMainCard>
 		{/if}
 
@@ -310,17 +260,6 @@
 					chance: formatNumber(stats.total.count / statsEntry.spawns.count, {
 						maximumFractionDigits: 0
 					})
-				})}
-			</BasicMainCard>
-		{/if}
-
-		<!--PVP rank notices-->
-		{#if pvpNotice}
-			<BasicMainCard class="flex gap-2 font-medium justify-center">
-				<Swords class="size-4 mt-1" />
-				{m.notice_pvp_rank({
-					name: speciesName(data),
-					league: pvpNotice
 				})}
 			</BasicMainCard>
 		{/if}
@@ -454,27 +393,23 @@
 	{/if}
 
 	{#if getUserSettings().filters.pokemon.enabled && getUserSettings().filters.pokemon.filters.find((f) => f.enabled)}
-		<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>
-			<BasicMainCard>
-				{@const filtersets = matchPokemonFiltersets(data)}
-
-				{#if filtersets.length === 0}
-					<p>
-						{m.filters_dont_match_pokemon()}
-					</p>
-				{/if}
-				<div class="flex flex-wrap gap-3">
-					{#each filtersets as filterset (filterset.id)}
-						<div
-							class="flex gap-3 font-medium items-center bg-accent-highlight px-4 py-2 rounded-md"
-						>
-							<FiltersetIcon {filterset} size={4} />
-							{filterTitle(filterset)}
-						</div>
-					{/each}
-				</div>
-			</BasicMainCard>
-		</TitledMainSection>
+		{@const filtersets = matchPokemonFiltersets(data)}
+		{#if filtersets.length > 0}
+			<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>
+				<BasicMainCard>
+					<div class="flex flex-wrap gap-3">
+						{#each filtersets as filterset (filterset.id)}
+							<div
+								class="flex gap-3 font-medium items-center bg-accent-highlight px-4 py-2 rounded-md"
+							>
+								<FiltersetIcon {filterset} size={4} />
+								{filterTitle(filterset)}
+							</div>
+						{/each}
+					</div>
+				</BasicMainCard>
+			</TitledMainSection>
+		{/if}
 	{/if}
 
 	<TitledMainSection Icon={Info} title={m.about_this_pokemon({ name: speciesName(data) })}>
