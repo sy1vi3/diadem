@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mCharacter, mItem, mPokemon, mQuest } from "$lib/services/ingameLocale";
@@ -626,17 +627,19 @@
 
 	<RoutesStartingHere fortId={data.id} />
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_pokestop()}>
-		<MainAccessMap
-			lat={data.lat}
-			lon={data.lon}
-			type={MapObjectType.POKESTOP}
-			uiconType="pokestop"
-			radius={80}
-			zoom={15.5}
-			icon={resize(getIconPokestop({}), { width: 64 })}
-		/>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_pokestop()}>
+			<MainAccessMap
+				lat={data.lat}
+				lon={data.lon}
+				type={MapObjectType.POKESTOP}
+				uiconType="pokestop"
+				radius={80}
+				zoom={15.5}
+				icon={resize(getIconPokestop({}), { width: 64 })}
+			/>
+		</TitledMainSection>
+	{/if}
 
 	{#if !data.isRouteEndpoint && showMatchingFiltersets()}
 		<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>

@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mPokemon } from "$lib/services/ingameLocale";
@@ -70,15 +71,17 @@
 		fallbackExplanation={m.unknown_spawnpoint_notice()}
 	/>
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_tappable()}>
-		<MainAccessMap
-			lat={data.lat}
-			lon={data.lon}
-			type={MapObjectType.TAPPABLE}
-			uiconType="tappable"
-			radius={40}
-			zoom={16.5}
-			icon={resize(getIconTappable(data), { width: 64 })}
-		/>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_tappable()}>
+			<MainAccessMap
+				lat={data.lat}
+				lon={data.lon}
+				type={MapObjectType.TAPPABLE}
+				uiconType="tappable"
+				radius={40}
+				zoom={16.5}
+				icon={resize(getIconTappable(data), { width: 64 })}
+			/>
+		</TitledMainSection>
+	{/if}
 {/snippet}

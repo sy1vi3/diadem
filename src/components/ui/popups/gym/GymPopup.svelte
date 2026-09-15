@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mMove, mPokemon, mRaid, mTeam } from "$lib/services/ingameLocale";
@@ -442,17 +443,19 @@
 
 	<RoutesStartingHere fortId={data.id} />
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_gym()}>
-		<MainAccessMap
-			lat={data.lat}
-			lon={data.lon}
-			type={MapObjectType.GYM}
-			uiconType="gym"
-			radius={80}
-			zoom={15.5}
-			icon={resize(getIconGym(data), { width: 64 })}
-		/>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_gym()}>
+			<MainAccessMap
+				lat={data.lat}
+				lon={data.lon}
+				type={MapObjectType.GYM}
+				uiconType="gym"
+				radius={80}
+				zoom={15.5}
+				icon={resize(getIconGym(data), { width: 64 })}
+			/>
+		</TitledMainSection>
+	{/if}
 
 	{#if showMatchingFiltersets()}
 		<TitledMainSection Icon={SlidersHorizontal} title={m.matching_filtersets()}>

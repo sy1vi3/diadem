@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mItem, mMove, mPokemon, mWeather } from "$lib/services/ingameLocale";
@@ -489,33 +490,35 @@
 	<PokemonStatsCard {data} />
 
 	{#if !data.seen_type?.includes("nearby")}
-		<TitledMainSection Icon={CircleDot} title={m.access_this_pokemon({ name: speciesName(data) })}>
-			<div class="relative">
-				<MainAccessMap
-					lat={data.lat}
-					lon={data.lon}
-					type={MapObjectType.POKEMON}
-					uiconType="pokemon"
-					radius={mapExpandedRadius ? 80 : 40}
-					zoom={mapExpandedRadius ? 15.5 : 16.5}
-					icon={resize(getIconPokemon(data), { width: 64 })}
-				/>
-				<Button
-					variant="outline"
-					size="sm"
-					class="mt-2 absolute top-3 right-3 bg-accent! hover:bg-background! active:bg-background!"
-					onclick={() => (mapExpandedRadius = !mapExpandedRadius)}
-				>
-					{#if mapExpandedRadius}
-						<Shrink class="size-3.5" />
-						{m.normal()}
-					{:else}
-						<Expand class="size-3.5" />
-						{m.popup_action_spacial_rend()}
-					{/if}
-				</Button>
-			</div>
-		</TitledMainSection>
+		{#if getConfig().general.showAccessMaps !== false}
+			<TitledMainSection Icon={CircleDot} title={m.access_this_pokemon({ name: speciesName(data) })}>
+				<div class="relative">
+					<MainAccessMap
+						lat={data.lat}
+						lon={data.lon}
+						type={MapObjectType.POKEMON}
+						uiconType="pokemon"
+						radius={mapExpandedRadius ? 80 : 40}
+						zoom={mapExpandedRadius ? 15.5 : 16.5}
+						icon={resize(getIconPokemon(data), { width: 64 })}
+					/>
+					<Button
+						variant="outline"
+						size="sm"
+						class="mt-2 absolute top-3 right-3 bg-accent! hover:bg-background! active:bg-background!"
+						onclick={() => (mapExpandedRadius = !mapExpandedRadius)}
+					>
+						{#if mapExpandedRadius}
+							<Shrink class="size-3.5" />
+							{m.normal()}
+						{:else}
+							<Expand class="size-3.5" />
+							{m.popup_action_spacial_rend()}
+						{/if}
+					</Button>
+				</div>
+			</TitledMainSection>
+		{/if}
 	{/if}
 
 	{#if getUserSettings().filters.pokemon.enabled && getUserSettings().filters.pokemon.filters.find((f) => f.enabled)}

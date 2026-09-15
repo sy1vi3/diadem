@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mPokemon } from "$lib/services/ingameLocale";
@@ -104,11 +105,13 @@
 
 	<PokemonStatsCard data={{ pokemon_id: data.pokemon_id ?? 0, form: data.form ?? 0 }} />
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_nest()}>
-		<AccessPolygonMap
-			polygon={data.polygon}
-			fillColor="rgba(152, 248, 163, 0.4)"
-			strokeColor="rgba(152, 248, 163, 0.8)"
-		/>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_nest()}>
+			<AccessPolygonMap
+				polygon={data.polygon}
+				fillColor="rgba(152, 248, 163, 0.4)"
+				strokeColor="rgba(152, 248, 163, 0.8)"
+			/>
+		</TitledMainSection>
+	{/if}
 {/snippet}

@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { mMove, mPokemon } from "$lib/services/ingameLocale";
@@ -287,17 +288,19 @@
 		</TitledMainSection>
 	{/if}
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_power_spot()}>
-		<MainAccessMap
-			lat={data.lat}
-			lon={data.lon}
-			type={MapObjectType.STATION}
-			uiconType="station"
-			radius={80}
-			zoom={15.5}
-			icon={resize(getIconStation(data), { width: 64 })}
-		/>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_power_spot()}>
+			<MainAccessMap
+				lat={data.lat}
+				lon={data.lon}
+				type={MapObjectType.STATION}
+				uiconType="station"
+				radius={80}
+				zoom={15.5}
+				icon={resize(getIconStation(data), { width: 64 })}
+			/>
+		</TitledMainSection>
+	{/if}
 
 	<TitledMainSection Icon={Info} title={m.about_this_sation()}>
 		<StatsMainCard>

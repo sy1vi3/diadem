@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
 	import { type MapData, MapObjectType } from "$lib/mapObjects/mapObjectTypes";
@@ -108,33 +109,35 @@
 		</StatsMainCard>
 	</TitledMainSection>
 
-	<TitledMainSection Icon={CircleDot} title={m.access_this_spawnpoint()}>
-		<div class="relative">
-			<MainAccessMap
-				lat={data.lat}
-				lon={data.lon}
-				type={MapObjectType.SPAWNPOINT}
-				radius={mapExpandedRadius ? 80 : 40}
-				zoom={mapExpandedRadius ? 15.5 : 16.5}
-				marker="circle"
-				markerRadius={5}
-				{markerFillColor}
-				{markerStrokeColor}
-			/>
-			<Button
-				variant="outline"
-				size="sm"
-				class="mt-2 absolute top-3 right-3 bg-accent! hover:bg-background! active:bg-background!"
-				onclick={() => (mapExpandedRadius = !mapExpandedRadius)}
-			>
-				{#if mapExpandedRadius}
-					<Shrink class="size-3.5" />
-					{m.normal()}
-				{:else}
-					<Expand class="size-3.5" />
-					{m.popup_action_spacial_rend()}
-				{/if}
-			</Button>
-		</div>
-	</TitledMainSection>
+	{#if getConfig().general.showAccessMaps !== false}
+		<TitledMainSection Icon={CircleDot} title={m.access_this_spawnpoint()}>
+			<div class="relative">
+				<MainAccessMap
+					lat={data.lat}
+					lon={data.lon}
+					type={MapObjectType.SPAWNPOINT}
+					radius={mapExpandedRadius ? 80 : 40}
+					zoom={mapExpandedRadius ? 15.5 : 16.5}
+					marker="circle"
+					markerRadius={5}
+					{markerFillColor}
+					{markerStrokeColor}
+				/>
+				<Button
+					variant="outline"
+					size="sm"
+					class="mt-2 absolute top-3 right-3 bg-accent! hover:bg-background! active:bg-background!"
+					onclick={() => (mapExpandedRadius = !mapExpandedRadius)}
+				>
+					{#if mapExpandedRadius}
+						<Shrink class="size-3.5" />
+						{m.normal()}
+					{:else}
+						<Expand class="size-3.5" />
+						{m.popup_action_spacial_rend()}
+					{/if}
+				</Button>
+			</div>
+		</TitledMainSection>
+	{/if}
 {/snippet}

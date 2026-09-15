@@ -503,6 +503,13 @@ warning) and the rest still load.
 > table for the same layer.
 
 
+## Optional popup access maps
+
+Set `showAccessMaps = false` inside `[client.general]` to hide the “Access this…”
+section in Pokémon, PokéStop, gym, Power Spot, spawnpoint, nest, and tappable popups.
+The default is `true` when omitted. Navigation and the main map's range controls
+remain available. This optional setting is intentionally absent from `config.example.toml`.
+
 ## Multiple regional URLs (`sites`)
 
 One Diadem process can serve several public origins with different branding and

@@ -32,6 +32,8 @@ export type UiconSet = {
 };
 
 type General = {
+	/** Show the access mini-map sections in object popups. Defaults to true. */
+	showAccessMaps?: boolean;
 	mapName: string;
 	defaultLocale: string;
 	customHome: boolean;
