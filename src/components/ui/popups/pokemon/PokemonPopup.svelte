@@ -214,7 +214,7 @@
 		</p>
 	{/if}
 
-	<div class="space-y-2 empty:hidden">
+	<div class="space-y-2 hidden has-[>_*]:block">
 		<!--Special seen types-->
 		{#if data.seen_type?.includes("lure")}
 			<BasicMainCard class="flex gap-4 font-medium items-center justify-center">

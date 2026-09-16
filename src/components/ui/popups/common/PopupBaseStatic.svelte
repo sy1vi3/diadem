@@ -117,7 +117,7 @@
 	</div>
 {/if}
 
-<div class="mt-5" data-popup-initial-snap-point-end>
+<div class="mt-3" data-popup-initial-snap-point-end>
 	{#if onlyShowNavigationButton}
 		<PopupButton
 			class="mx-4 w-full"
@@ -133,7 +133,10 @@
 	{/if}
 </div>
 
-<div data-popup-body class="min-w-0 px-4 pt-2 mt-2 pb-6 space-y-7 overflow-y-auto">
+<div
+	data-popup-body
+	class="min-w-0 flex flex-col gap-5 px-4 pt-2 pb-5 overflow-y-auto [&>*]:shrink-0"
+>
 	{#if props && data}
 		{@render props.main(data)}
 	{/if}
