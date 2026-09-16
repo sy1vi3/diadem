@@ -9,7 +9,8 @@
 		fortUrl,
 		fortIcon,
 		fortName = "",
-		fortDescription = ""
+		fortDescription = "",
+		ringClass = "ring-border"
 	}: {
 		class?: string;
 		alt: string;
@@ -17,6 +18,7 @@
 		fortIcon: string;
 		fortName?: string;
 		fortDescription?: string;
+		ringClass?: string;
 	} = $props();
 </script>
 
@@ -33,7 +35,7 @@
 		<ImagePopup
 			{alt}
 			src={fortUrl}
-			class="absolute transition-all top-0 object-cover h-14 w-14 rounded-full ring-border ring-2 ring-offset-card ring-offset-2 {class_}"
+			class="absolute transition-all top-0 object-cover h-14 w-14 rounded-full {ringClass} ring-2 ring-offset-card ring-offset-2 {class_}"
 		/>
 		<span
 			class="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity absolute left-0 top-0 w-14 h-14 rounded-full backdrop-brightness-75 {class_}"

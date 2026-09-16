@@ -118,6 +118,13 @@
 		fortIcon={getIconGym(data)}
 		fortName={data.name}
 		fortDescription={data.description}
+		ringClass={data.team_id === 1
+			? "ring-blue-500"
+			: data.team_id === 2
+				? "ring-red-500"
+				: data.team_id === 3
+					? "ring-yellow-500"
+					: "ring-border"}
 	/>
 {/snippet}
 
@@ -293,7 +300,8 @@
 					{#if data.defenders?.length}
 						{#key data.mapId}
 							<div
-								class="divide-y divide-border overflow-hidden rounded-lg border border-border"
+								class="divide-y divide-border overflow-hidden rounded-lg border"
+								class:border-border={![1, 2, 3].includes(data.team_id ?? 0)}
 								class:border-blue-500={data.team_id === 1}
 								class:border-red-500={data.team_id === 2}
 								class:border-yellow-500={data.team_id === 3}
