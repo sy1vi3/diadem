@@ -3,7 +3,7 @@ import type { Handle, ServerInit } from "@sveltejs/kit";
 import { getUserByDiscordId } from "@/lib/server/auth/auth";
 import {
 	AUTH_BASE_PATH,
-	auth,
+	getAuth,
 	getAuthSession,
 	getDiscordAccessToken,
 	isAuthEnabled
@@ -18,8 +18,8 @@ import { paraglideMiddleware } from "@/lib/paraglide/server";
 import { sequence } from "@sveltejs/kit/hooks";
 import { setServerLoggerFactory } from "@/lib/utils/logger";
 import { getServerLogger } from "@/lib/server/logging";
-import { getClientConfig } from "@/lib/services/config/config.server";
-import { setConfig } from "@/lib/services/config/config";
+import { getClientConfig, withSiteConfig } from "@/lib/services/config/config.server";
+import { setServerConfigResolver } from "@/lib/services/config/config";
 import { getDisallowedPaths } from "@/lib/utils/disallowedPaths";
 
 process.title = "Diadem";
@@ -78,6 +78,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
+	const auth = getAuth(event);
 	if (auth && event.url.pathname.startsWith(`${AUTH_BASE_PATH}/`)) {
 		return auth.handler(event.request);
 	}
@@ -136,8 +137,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 
 export const init: ServerInit = async () => {
 	// set config for ssr
-	const config = getClientConfig();
-	setConfig(config);
+	setServerConfigResolver(getClientConfig);
 
 	setServerLoggerFactory((name) => {
 		const winstonLogger = getServerLogger(name);
@@ -231,4 +231,7 @@ const handleSeo: Handle = async ({ event, resolve }) => {
 	});
 };
 
-export const handle: Handle = sequence(paraglideHandle, handleAuth, handleSeo);
+const siteHandle: Handle = ({ event, resolve }) =>
+	withSiteConfig(event.url.origin, () => resolve(event));
+
+export const handle: Handle = sequence(siteHandle, paraglideHandle, handleAuth, handleSeo);

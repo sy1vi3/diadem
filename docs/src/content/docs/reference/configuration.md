@@ -419,3 +419,94 @@ Modifiers can be used to adjust sizing and positioning for icons on the map.
   - `scale` to modify the icon's size
   - `offsetX`/`offsetY` to modify the icon's position
   - `spacing` to control the space between icons, when they can be displayed as an array
+
+
+## Multiple regional URLs (`sites`)
+
+One Diadem process can serve several public origins with different branding and
+starting settings. Add top-level site entries to your config:
+
+```toml
+[[sites]]
+origin = "https://north.example.com"
+[sites.client.general]
+mapName = "North Map"
+defaultLat = 51.5
+defaultLon = -0.12
+defaultZoom = 14
+[sites.client.discord]
+serverId = "NORTH_GUILD_ID"
+serverLink = "https://discord.gg/north-invite"
+
+[[sites]]
+origin = "https://south.example.com"
+[sites.client.general]
+mapName = "South Map"
+defaultLat = 50.8
+defaultLon = -1.1
+defaultZoom = 14
+```
+
+Origins must include the scheme and optional port, with no path, query, or wildcard.
+They match exactly. Duplicate origins fail at startup. Each site inherits the base
+`client` config. Overrides support `general` (including page title, description,
+image, starting location, and locale), `discord`, `mapPositions`,
+and `tools`; individual fields inherit when omitted. `general.url` defaults to the
+site origin. Map styles, icon sets,
+backend connections, and permissions are shared.
+
+Unlisted origins use base presentation settings. In multi-site mode, Discord login
+is available only on listed origins and the explicit `server.auth.baseUrl` (or
+`BETTER_AUTH_URL`). Register **each** public origin's
+`/api/auth/callback/discord` URL with the same Discord OAuth application. All sites
+use the same auth secret and database; each origin has its own login cookie.
+
+Point each domain at the same backend through your reverse proxy. SvelteKit must
+receive the actual public origin: a fixed adapter-node `ORIGIN` pins all requests
+to one site. When using `PROTOCOL_HEADER=x-forwarded-proto` and
+`HOST_HEADER=x-forwarded-host`, configure your trusted proxy to overwrite those
+headers and prevent clients from reaching the backend directly. Keep CDN cache
+keys separated by host, including `/api/config`, metadata, and thumbnails.
+
+Saved server-side preferences and map positions are isolated per configured origin
+using the existing user-settings JSON column; no database migration is needed.
+A newly configured site starts with its defaults until settings are saved there.
+Browser preferences already use per-origin local storage. Existing local settings
+or saved settings take precedence over defaults; config changes do not reset users.
+Legacy base-site settings are retained.
+
+### Discord roles across regions
+
+Site selection changes presentation, **not authorization**. Existing permission
+rules already add grants across multiple Discord guilds. For example:
+
+```toml
+[[server.permissions]]
+guildId = "NORTH_GUILD_ID"
+roleId = "NORTH_ACCESS_ROLE"
+areas = ["North"]
+features = ["map_object*"]
+
+[[server.permissions]]
+guildId = "SOUTH_GUILD_ID"
+roleId = "SOUTH_ACCESS_ROLE"
+areas = ["South"]
+features = ["map_object*"]
+
+[[server.permissions]]
+guildId = "ADMIN_GUILD_ID"
+roleId = "ALL_REGIONS_ROLE"
+features = ["*"]
+```
+
+Area names must match geofences in your configured Koji project. A person with both
+regional roles sees both regions from either URL; the global role has unrestricted
+access. A missing membership or role gives no grant from that guild. Permission refreshes follow
+the existing permission-cache interval.
+
+Enable `[server.auth]` and configure Discord credentials to use these rules. Remove
+any unrestricted `everyone` or `loggedIn` grants for features you intend to restrict:
+permissions add access and never subtract a broader grant. Use separate rules for
+public access, logged-in access, and guild/role access; do not mix match selectors
+such as `everyone = true` with a guild-specific rule. `client.discord.serverId`
+controls the displayed community link/membership hint, not scan-area authorization.
