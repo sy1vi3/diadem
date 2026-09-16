@@ -366,62 +366,61 @@
 
 	{@const pvpEntries = getPvpPopupEntries(data)}
 	{#if pvpEntries.length}
+		{@const widestRankLabel = m.rank_x({
+			rank: Math.max(...pvpEntries.map((entry) => entry.rank))
+		})}
 		<TitledMainSection Icon={Swords} title={m.pvp_performance()}>
 			{#key data.mapId}
-				<div class="space-y-3">
-					{#each [...new Set(pvpEntries.map((entry) => entry.league))] as league}
-						<section aria-label={mLeague(league)}>
-							<h3 class="mb-1.5 flex items-center gap-2 text-sm font-medium">
-								<ImagePopup class="size-5" src={getIconLeague(league)} alt="" />
-								{mLeague(league)}
-							</h3>
-							<div class="divide-y divide-border overflow-hidden rounded-lg border border-border">
-								{#each pvpEntries.filter((entry) => entry.league === league) as pokemon}
-									<details class="group">
-										<summary
-											class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
-										>
-											<ImagePopup class="size-10 shrink-0" src={getIconPokemon(pokemon)} alt="" />
-											<span class="min-w-0 flex-1">
-												<span class="block text-sm font-medium break-words"
-													>{mPokemon(pokemon)}</span
-												>
-												<span class="block text-xs text-muted-foreground"
-													>{m.considered_max_level()}: {formatNumber(pokemon.cap)}</span
-												>
-											</span>
-											<span class="shrink-0 text-right tabular-nums">
-												<span
-													class="block font-semibold"
-													class:text-amber-600={pokemon.rank === 1}
-													class:dark:text-amber-400={pokemon.rank === 1}
-													>{m.rank_x({ rank: pokemon.rank })}</span
-												>
-												<span class="block text-xs text-muted-foreground" title={m.performance()}
-													>{formatPercentage(pokemon.percentage, {
-														minDecimals: 0,
-														maxDecimals: 1
-													})}</span
-												>
-											</span>
-											<ChevronDown
-												class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-											/>
-										</summary>
-										<div
-											class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border bg-accent/30 px-3 py-2 text-sm"
-										>
-											<span class="text-muted-foreground">{m.pvp_target()}</span>
-											<span class="tabular-nums"
-												><span class="font-medium">{m.pogo_cp({ cp: pokemon.cp })}</span> · {m.pogo_level(
-													{ level: formatNumber(pokemon.level) }
-												)}</span
-											>
-										</div>
-									</details>
-								{/each}
+				<div class="divide-y divide-border overflow-hidden rounded-lg border border-border">
+					{#each pvpEntries as pokemon}
+						<details class="group">
+							<summary
+								class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+							>
+								<ImagePopup class="size-10 shrink-0" src={getIconPokemon(pokemon)} alt="" />
+								<span class="min-w-0 flex-1">
+									<span class="block text-sm font-medium break-words">{mPokemon(pokemon)}</span>
+									<span class="block text-xs text-muted-foreground"
+										>{m.considered_max_level()}: {formatNumber(pokemon.cap)}</span
+									>
+								</span>
+								<ImagePopup
+									class="size-10 shrink-0"
+									src={getIconLeague(pokemon.league)}
+									alt={mLeague(pokemon.league)}
+								/>
+								<span class="grid shrink-0 text-left tabular-nums">
+									<span class="invisible col-start-1 row-start-1 font-semibold" aria-hidden="true"
+										>{widestRankLabel}</span
+									>
+									<span
+										class="col-start-1 row-start-1 font-semibold"
+										class:text-amber-600={pokemon.rank === 1}
+										class:dark:text-amber-400={pokemon.rank === 1}
+										>{m.rank_x({ rank: pokemon.rank })}</span
+									>
+									<span class="block text-xs text-muted-foreground" title={m.performance()}
+										>{formatPercentage(pokemon.percentage, {
+											minDecimals: 0,
+											maxDecimals: 1
+										})}</span
+									>
+								</span>
+								<ChevronDown
+									class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+								/>
+							</summary>
+							<div
+								class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border bg-accent/30 px-3 py-2 text-sm"
+							>
+								<span class="text-muted-foreground">{mLeague(pokemon.league)}</span>
+								<span class="tabular-nums"
+									><span class="font-medium">{m.pogo_cp({ cp: pokemon.cp })}</span> · {m.pogo_level(
+										{ level: formatNumber(pokemon.level) }
+									)}</span
+								>
 							</div>
-						</section>
+						</details>
 					{/each}
 				</div>
 			{/key}
