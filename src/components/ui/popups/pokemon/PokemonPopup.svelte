@@ -1,4 +1,5 @@
 <script module lang="ts">
+	import type { Snippet } from "svelte";
 	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
@@ -45,6 +46,7 @@
 		BicepsFlexed,
 		ChevronDown,
 		CircleDot,
+		Clock,
 		CircleSmall,
 		Expand,
 		Info,
@@ -62,7 +64,7 @@
 	import { getIconLeague } from "$lib/services/uicons.svelte";
 
 	import { getMasterPokemon } from "$lib/services/masterfile";
-	export { image, titleDetails, headerDetails, main };
+	export { image, titleDetails, heading, main };
 
 	type PvpLeague = League.LITTLE | League.GREAT | League.ULTRA;
 	type PvpPopupEntry = PvpStats & { league: PvpLeague };
@@ -83,8 +85,7 @@
 			type: m.wild_pokemon(),
 			title: pokemonName(data),
 			image,
-			titleDetails,
-			headerDetails,
+			heading,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -148,56 +149,127 @@
 		{#each getMasterPokemon(data.pokemon_id, data.form)?.types ?? [] as type}
 			<ImagePopup src={getIconType(type)} alt={mType(type)} class="size-4" />
 		{/each}
-		{#if data.size && [1, 5].includes(data.size)}<span class="text-xs font-medium"
-				>{getPokemonSize(data.size)}</span
-			>{/if}
+		{#if data.weather}
+			{@const WeatherIcon = getWeatherIcon(data.weather)}
+			<span
+				class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-accent text-foreground"
+				role="img"
+				aria-label={m.pokemon_weather_boosted({ weather: mWeather(data.weather) })}
+				title={m.pokemon_weather_boosted({ weather: mWeather(data.weather) })}
+			>
+				<WeatherIcon class="size-3.5" aria-hidden="true" />
+			</span>
+		{/if}
+		{#if data.size === 1 || data.size === 5}
+			<span
+				class="inline-flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none"
+				class:bg-amber-100={data.size === 5}
+				class:text-amber-800={data.size === 5}
+				class:dark:bg-amber-950={data.size === 5}
+				class:dark:text-amber-200={data.size === 5}
+				class:bg-violet-100={data.size === 1}
+				class:text-violet-800={data.size === 1}
+				class:dark:bg-violet-950={data.size === 1}
+				class:dark:text-violet-200={data.size === 1}
+			>
+				{#if data.size === 5}<Expand class="size-3" />{:else}<Shrink class="size-3" />{/if}
+				{getPokemonSize(data.size)}
+			</span>
+		{/if}
 	</div>
 {/snippet}
 
-{#snippet headerDetails(d: MapData)}
+{#snippet heading(d: MapData, controls: Snippet)}
 	{@const data = d as PokemonData}
-	<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
-		{#if data.iv != null}
-			<span
-				><span class="text-muted-foreground">{m.pogo_ivs()}</span>
-				<strong>{@render coloredIvs(data.iv, 1)}</strong>
-				<span
-					class="text-xs text-muted-foreground"
-					title="{m.attack()} / {m.defense()} / {m.stamina()}"
-					>({data.atk_iv ?? "–"}/{data.def_iv ?? "–"}/{data.sta_iv ?? "–"})</span
+	{@const visibleLeagues = [League.LITTLE, League.GREAT, League.ULTRA].filter(
+		(league) =>
+			getBestRank(data, league) > 0 &&
+			((league === League.LITTLE && showLittle(data)) ||
+				(league === League.GREAT && showGreat(data)) ||
+				(league === League.ULTRA && showUltra(data)))
+	)}
+	<div class="flex items-center gap-3 px-4">
+		{@render image(data)}
+		<div class="min-w-0 flex-1">
+			<div class="flex items-center justify-between gap-2">
+				<div
+					class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
 				>
-			</span>
-		{/if}
-		{#if data.cp != null}<span
-				><span class="text-muted-foreground">{m.cp()}</span> <strong>{data.cp}</strong></span
-			>{/if}
-		{#if data.level != null}<span
-				><span class="text-muted-foreground">{m.level()}</span> <strong>{data.level}</strong></span
-			>{/if}
-	</div>
-	<div
-		class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground tabular-nums"
-	>
-		<span
-			>{hasTimer(data) ? m.popup_despawns() : m.popup_found()}
-			<Countdown
-				expireTime={hasTimer(data) ? data.expire_timestamp : data.first_seen_timestamp}
-			/></span
-		>
-		{#each [League.LITTLE, League.GREAT, League.ULTRA] as league}
-			{#if (league === League.LITTLE && showLittle(data)) || (league === League.GREAT && showGreat(data)) || (league === League.ULTRA && showUltra(data))}
-				<span class="inline-flex items-center gap-1"
-					><ImagePopup src={getIconLeague(league)} alt={mLeague(league)} class="size-4" /> #{getBestRank(
-						data,
-						league
-					)}</span
+					<span>{m.wild_pokemon()}</span>
+					<span
+						class="inline-flex shrink-0 items-center gap-1.5 tabular-nums"
+						title={hasTimer(data) ? m.popup_despawns() : m.popup_found()}
+						><Clock class="size-3.5" />
+						{#if !hasTimer(data)}{m.popup_found()}{/if}
+						<span class="font-medium text-foreground"
+							><Countdown
+								expireTime={hasTimer(data) ? data.expire_timestamp : data.first_seen_timestamp}
+							/></span
+						>
+					</span>
+				</div>
+				<div class="flex shrink-0 gap-1 [&_button]:size-7 [&_button]:p-1.5 [&_svg]:size-3.5">
+					{@render controls()}
+				</div>
+			</div>
+			<div class="mt-1 flex items-baseline justify-between gap-2">
+				<h1
+					class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold [overflow-wrap:anywhere]"
 				>
+					<span class="min-w-0 max-w-full">{pokemonName(data)}</span>
+					{@render titleDetails(data)}
+				</h1>
+				{#if data.cp != null}
+					<div class="flex shrink-0 items-baseline gap-1 tabular-nums">
+						<span class="text-xs text-muted-foreground">{m.cp()}</span>
+						<strong class="text-2xl font-semibold">{formatNumber(data.cp)}</strong>
+					</div>
+				{/if}
+			</div>
+			{#if data.iv != null || data.level != null || visibleLeagues.length}
+				<div class="mt-1 flex items-center justify-between gap-2 tabular-nums max-[360px]:-ml-17">
+					<div class="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+						{#if data.iv != null}
+							<strong class="inline-block w-14 shrink-0 text-lg font-semibold" title={m.pogo_ivs()}
+								>{@render coloredIvs(data.iv, 1)}</strong
+							>
+						{/if}
+						{#if data.iv != null}
+							<span
+								class="shrink-0 whitespace-nowrap text-xs text-muted-foreground"
+								title="{m.attack_iv()}/{m.defense_iv()}/{m.stamina_iv()}"
+								>{data.atk_iv ?? "–"}/{data.def_iv ?? "–"}/{data.sta_iv ?? "–"}</span
+							>
+						{/if}
+						{#if visibleLeagues.length}
+							<div
+								class="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1 text-[11px]"
+								aria-label={m.pvp_performance()}
+							>
+								{#each visibleLeagues as league}
+									<span
+										class="inline-flex items-center gap-0.5"
+										title="{mLeague(league)} · {m.rank_x({ rank: getBestRank(data, league) })}"
+									>
+										<ImagePopup
+											src={getIconLeague(league)}
+											alt={mLeague(league)}
+											class="size-3.5"
+										/>#{getBestRank(data, league)}
+									</span>
+								{/each}
+							</div>
+						{/if}
+					</div>
+					{#if data.level != null}
+						<div class="ml-auto flex shrink-0 items-baseline gap-1 text-sm">
+							<span class="text-xs text-muted-foreground">{m.pokemon_level_label_short()}</span>
+							<span class="font-medium text-foreground">{formatNumber(data.level)}</span>
+						</div>
+					{/if}
+				</div>
 			{/if}
-		{/each}
-		{#if data.weather}{@const WeatherIcon = getWeatherIcon(data.weather)}<span
-				class="inline-flex items-center gap-1"
-				title={m.weather_boost()}><WeatherIcon class="size-3.5" />{mWeather(data.weather)}</span
-			>{/if}
+		</div>
 	</div>
 {/snippet}
 
@@ -471,6 +543,6 @@
 		class:text-tier-3={iv >= 90 && iv <= 99}
 		class:text-tier-4={iv > 99}
 	>
-		{formatPercentage(iv / 100, { minDecimals: decimals, maxDecimals: decimals })}
+		{formatPercentage(iv / 100, { minDecimals: 0, maxDecimals: decimals })}
 	</span>
 {/snippet}

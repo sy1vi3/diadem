@@ -708,5 +708,8 @@
 	"in_range": "In Range",
 	"defender_deployed_cp": "CP when placed",
 	"copy_address": "Copy address",
-	"copy_coordinates": "Copy coordinates"
+	"copy_coordinates": "Copy coordinates",
+	"pokemon_level_short": "Lv {level}",
+	"pokemon_weather_boosted": "{weather} · boosted",
+	"pokemon_level_label_short": "Lv"
 }

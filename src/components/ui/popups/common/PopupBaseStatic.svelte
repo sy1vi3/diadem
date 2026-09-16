@@ -8,6 +8,7 @@
 		title: string;
 		image: Snippet<[MapData]>;
 		overview?: Snippet<[MapData]>;
+		heading?: Snippet<[MapData, Snippet]>;
 		headerDetails?: Snippet<[MapData]>;
 		titleDetails?: Snippet<[MapData]>;
 		main: Snippet<[MapData]>;
@@ -54,54 +55,62 @@
 	}
 </script>
 
-<div class="flex gap-3 px-4 pr-24">
-	{#if props && data}
-		{@render props.image(data)}
-		<div class="min-w-0">
-			<p class="text-muted-foreground text-sm font-medium">
-				{props.type}
-			</p>
-			<h1 class="flex flex-wrap items-center gap-x-2 break-words text-xl font-semibold">
-				<span class="min-w-0 max-w-full">{props.title}</span>
-				{#if props.titleDetails}{@render props.titleDetails(data)}{/if}
-			</h1>
-		</div>
-	{/if}
-
-	<div class="absolute right-2 top-2 flex gap-3">
-		{#if canNativeShare({ url: getShareUrl() })}
-			<Button
-				variant="ghost"
-				size=""
-				class="rounded-full p-2 size-9 bg-accent/50"
-				title={m.popup_share()}
-				onclick={() => backupShareUrl(getShareUrl())}
-			>
-				<Share2 class="size-3.5" />
-			</Button>
-		{:else if hasClipboardWrite()}
-			<Button
-				variant="ghost"
-				size=""
-				class="rounded-full p-2 size-9 bg-accent/50"
-				title={m.copy_link()}
-				onclick={() => copyToClipboard(getShareUrl())}
-			>
-				<Copy class="size-3.5" />
-			</Button>
-		{/if}
-
+{#snippet headingControls()}
+	{#if canNativeShare({ url: getShareUrl() })}
 		<Button
 			variant="ghost"
 			size=""
 			class="rounded-full p-2 size-9 bg-accent/50"
-			title={m.close()}
-			onclick={() => closePopup()}
+			title={m.popup_share()}
+			onclick={() => backupShareUrl(getShareUrl())}
 		>
-			<X class="size-4.5" />
+			<Share2 class="size-3.5" />
 		</Button>
+	{:else if hasClipboardWrite()}
+		<Button
+			variant="ghost"
+			size=""
+			class="rounded-full p-2 size-9 bg-accent/50"
+			title={m.copy_link()}
+			onclick={() => copyToClipboard(getShareUrl())}
+		>
+			<Copy class="size-3.5" />
+		</Button>
+	{/if}
+
+	<Button
+		variant="ghost"
+		size=""
+		class="rounded-full p-2 size-9 bg-accent/50"
+		title={m.close()}
+		onclick={() => closePopup()}
+	>
+		<X class="size-4.5" />
+	</Button>
+{/snippet}
+
+{#if props && data && props.heading}
+	{@render props.heading(data, headingControls)}
+{:else}
+	<div class="flex gap-3 px-4 pr-24">
+		{#if props && data}
+			{@render props.image(data)}
+			<div class="min-w-0">
+				<p class="text-muted-foreground text-sm font-medium">
+					{props.type}
+				</p>
+				<h1 class="flex flex-wrap items-center gap-x-2 break-words text-xl font-semibold">
+					<span class="min-w-0 max-w-full">{props.title}</span>
+					{#if props.titleDetails}{@render props.titleDetails(data)}{/if}
+				</h1>
+			</div>
+		{/if}
+
+		<div class="absolute right-2 top-2 flex gap-3">
+			{@render headingControls()}
+		</div>
 	</div>
-</div>
+{/if}
 
 {#if props && data && props.headerDetails}
 	<div class="px-4 mt-2">{@render props.headerDetails(data)}</div>
