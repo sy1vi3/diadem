@@ -43,6 +43,7 @@
 		UserRoundCheck
 	} from "@lucide/svelte";
 	import { getActiveRaidsForLevel } from "$lib/features/masterStats.svelte";
+	import { isMenuSidebar } from "$lib/utils/device";
 	import { currentTimestamp } from "$lib/utils/currentTimestamp";
 
 	import { getUserSettings } from "$lib/services/userSettings.svelte";
@@ -62,7 +63,7 @@
 			type: m.pogo_gym(),
 			title: data.name ?? m.unknown_gym(),
 			image,
-			headerDetails,
+			headerDetails: isMenuSidebar() ? undefined : headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -120,26 +121,34 @@
 	/>
 {/snippet}
 
+{#snippet raidSummary(data: GymData, desktop: boolean)}
+	<div class="flex items-center" class:gap-3={desktop} class:gap-2={!desktop} class:mt-2={!desktop}>
+		<ImagePopup
+			class={desktop ? "size-24 shrink-0" : "size-9 shrink-0"}
+			src={getRaidIcon(data)}
+			alt=""
+		/>
+		<div class="min-w-0">
+			<p class="font-semibold break-words" class:text-lg={desktop} class:text-sm={!desktop}>
+				{getRaidTitle(data)}
+				{#if data.raid_pokemon_id}<span
+						class="text-xs font-normal text-muted-foreground"
+						class:block={desktop}
+						class:ml-2={!desktop}>{mRaid(data.raid_level)}</span
+					>{/if}
+			</p>
+			<p class="text-xs text-muted-foreground" class:mt-1={desktop}>
+				{isRaidHatched(data) ? m.raid_ends() : m.raid_starts()}
+				<Countdown expireTime={getRaidExpire(data)} />
+			</p>
+		</div>
+	</div>
+{/snippet}
+
 {#snippet headerDetails(d: MapData)}
 	{@const data = d as GymData}
-	{#if !data.isRouteEndpoint && !isFortOutdated(data.updated)}
-		{#if isActiveRaid(data)}
-			<div class="mt-2 flex items-center gap-2 text-sm">
-				<ImagePopup class="size-9 shrink-0" src={getRaidIcon(data)} alt="" />
-				<div class="min-w-0">
-					<p class="font-semibold">
-						{getRaidTitle(data)}{#if data.raid_pokemon_id}<span
-								class="ml-2 text-xs font-normal text-muted-foreground"
-								>{mRaid(data.raid_level)}</span
-							>{/if}
-					</p>
-					<p class="text-xs text-muted-foreground">
-						{isRaidHatched(data) ? m.raid_ends() : m.raid_starts()}
-						<Countdown expireTime={getRaidExpire(data)} />
-					</p>
-				</div>
-			</div>
-		{/if}
+	{#if !isMenuSidebar() && !data.isRouteEndpoint && !isFortOutdated(data.updated) && isActiveRaid(data)}
+		{@render raidSummary(data, false)}
 	{/if}
 {/snippet}
 
@@ -165,6 +174,9 @@
 			{#if activeRaid}<TitledMainSection Icon={RaidIcon} title={m.raid()}>
 					<BasicMainCard>
 						<div class="space-y-3">
+							{#if isMenuSidebar()}
+								{@render raidSummary(data, true)}
+							{/if}
 							<!--Expiration-->
 							<div>
 								<IconValue class="mb-1" Icon={Clock}>
