@@ -7,7 +7,7 @@ import type { RequestEvent } from "@sveltejs/kit";
 import { db } from "@/lib/server/db/internal";
 import { account, session, user, verification } from "@/lib/server/db/internal/schema";
 import { generateUserId } from "@/lib/server/auth/auth";
-import { getServerConfig } from "@/lib/services/config/config.server";
+import { getServerConfig, getSiteOrigins } from "@/lib/services/config/config.server";
 import { getServerLogger } from "@/lib/server/logging";
 
 const log = getServerLogger("auth");
@@ -19,75 +19,88 @@ const authSecret = authConfig.secret || process.env.BETTER_AUTH_SECRET || proces
 export const AUTH_BASE_PATH = "/api/auth";
 export const IS_AUTH_ENABLED = Boolean(authConfig.enabled);
 
-export const auth = IS_AUTH_ENABLED
-	? betterAuth({
-			secret: authSecret,
-			baseURL: authConfig.baseUrl,
-			basePath: AUTH_BASE_PATH,
-			database: drizzleAdapter(db, {
-				provider: "mysql",
-				camelCase: true,
-				usePlural: false,
-				schema: { user, session, account, verification }
-			}),
-			trustedOrigins: [
-				...(authConfig.baseUrl ? [authConfig.baseUrl] : []),
-				// Native (Capacitor) webview origins + custom scheme, so the app can
-				// call auth endpoints (bearer/one-time-token) and use the deep-link callback.
-				"https://localhost",
-				"capacitor://localhost",
-				"diadem://"
-			],
-			// bearer: accept Authorization: Bearer <session token> (native has no cookies).
-			plugins: [bearer()],
-			advanced: {
-				database: {
-					generateId: () => generateUserId()
-				}
-			},
-			session: {
-				expiresIn: 60 * 60 * 24 * 30,
-				updateAge: 60 * 60 * 24 * 15
-			},
-			account: {
-				encryptOAuthTokens: true,
-				// Link an OAuth sign-in to a pre-existing user row when emails match
-				// (used to keep pre-Better-Auth user rows attached on first login).
-				accountLinking: {
-					enabled: true,
-					trustedProviders: ["discord"]
-				}
-			},
-			user: {
-				additionalFields: {
-					discordId: {
-						type: "string",
-						required: true,
-						unique: true,
-						input: false,
-						returned: true
-					}
-				}
-			},
-			socialProviders: {
-				discord: {
-					clientId: discordConfig?.clientId ?? "",
-					clientSecret: discordConfig?.clientSecret ?? "",
-					disableDefaultScope: true,
-					scope: ["identify", "guilds.members.read"],
-					mapProfileToUser: (profile) => ({
-						discordId: profile.id,
-						name: profile.global_name || profile.username,
-						email: `${profile.id}@discord.internal`,
-						emailVerified: true,
-						image: profile.image_url || undefined
-					})
+function createAuth(baseURL: string | undefined) {
+	return betterAuth({
+		secret: authSecret,
+		baseURL,
+		basePath: AUTH_BASE_PATH,
+		database: drizzleAdapter(db, {
+			provider: "mysql",
+			camelCase: true,
+			usePlural: false,
+			schema: { user, session, account, verification }
+		}),
+		trustedOrigins: [
+			...(baseURL ? [baseURL] : []),
+			// Native (Capacitor) webview origins + custom scheme, so the app can
+			// call auth endpoints (bearer/one-time-token) and use the deep-link callback.
+			"https://localhost",
+			"capacitor://localhost",
+			"diadem://"
+		],
+		// bearer: accept Authorization: Bearer <session token> (native has no cookies).
+		plugins: [bearer()],
+		advanced: {
+			database: {
+				generateId: () => generateUserId()
+			}
+		},
+		session: {
+			expiresIn: 60 * 60 * 24 * 30,
+			updateAge: 60 * 60 * 24 * 15
+		},
+		account: {
+			encryptOAuthTokens: true,
+			// Link an OAuth sign-in to a pre-existing user row when emails match
+			// (used to keep pre-Better-Auth user rows attached on first login).
+			accountLinking: {
+				enabled: true,
+				trustedProviders: ["discord"]
+			}
+		},
+		user: {
+			additionalFields: {
+				discordId: {
+					type: "string",
+					required: true,
+					unique: true,
+					input: false,
+					returned: true
 				}
 			}
-		})
-	: null;
+		},
+		socialProviders: {
+			discord: {
+				clientId: discordConfig?.clientId ?? "",
+				clientSecret: discordConfig?.clientSecret ?? "",
+				disableDefaultScope: true,
+				scope: ["identify", "guilds.members.read"],
+				mapProfileToUser: (profile) => ({
+					discordId: profile.id,
+					name: profile.global_name || profile.username,
+					email: `${profile.id}@discord.internal`,
+					emailVerified: true,
+					image: profile.image_url || undefined
+				})
+			}
+		}
+	});
+}
 
-type AuthInstance = NonNullable<typeof auth>;
+const defaultAuth = IS_AUTH_ENABLED ? createAuth(authConfig.baseUrl) : null;
+const siteAuth = new Map(
+	getSiteOrigins().map((origin) => [origin, IS_AUTH_ENABLED ? createAuth(origin) : null])
+);
+
+export function getAuth(event: RequestEvent) {
+	if (siteAuth.has(event.url.origin)) return siteAuth.get(event.url.origin)!;
+	// In multi-site mode never infer an OAuth callback origin from an unknown host.
+	const baseURL = authConfig.baseUrl || process.env.BETTER_AUTH_URL;
+	if (siteAuth.size && (!baseURL || new URL(baseURL).origin !== event.url.origin)) return null;
+	return defaultAuth;
+}
+
+type AuthInstance = NonNullable<typeof defaultAuth>;
 export type BetterAuthSession = AuthInstance["$Infer"]["Session"];
 export type BetterAuthSessionData = BetterAuthSession["session"];
 
@@ -126,6 +139,7 @@ export async function signInWithDiscord(
 	event: RequestEvent,
 	options: { callbackURL: string; errorCallbackURL: string }
 ) {
+	const auth = getAuth(event);
 	if (!auth) return null;
 	try {
 		const result = await auth.api.signInSocial({
@@ -148,6 +162,7 @@ export async function signInWithDiscord(
 }
 
 export async function signOut(event: RequestEvent) {
+	const auth = getAuth(event);
 	if (!auth) return false;
 
 	const accessToken = await getDiscordAccessToken(event);
@@ -169,6 +184,7 @@ export async function signOut(event: RequestEvent) {
 }
 
 export async function getAuthSession(event: RequestEvent): Promise<BetterAuthSession | null> {
+	const auth = getAuth(event);
 	if (!auth) return null;
 	try {
 		const result = await auth.api.getSession({
@@ -198,6 +214,7 @@ export function getNativeAuthToken(event: RequestEvent): string | null {
 }
 
 export async function getDiscordAccessToken(event: RequestEvent): Promise<string | null> {
+	const auth = getAuth(event);
 	if (!auth) return null;
 	try {
 		const result = await auth.api.getAccessToken({
