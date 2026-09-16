@@ -18,7 +18,9 @@ export function isUiLeft() {
 
 export function canNativeShare(content: ShareData) {
 	if (isNative()) return true;
-	return navigator?.share != null && navigator.canShare && navigator.canShare(content);
+	// Desktop browsers can expose an OS share sheet; the desktop UI should copy links.
+	if (isMenuSidebar() || typeof navigator === "undefined") return false;
+	return navigator.share != null && Boolean(navigator.canShare?.(content));
 }
 
 export function hasClipboardWrite() {
