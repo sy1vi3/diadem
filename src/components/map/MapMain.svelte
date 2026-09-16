@@ -26,6 +26,7 @@
 	} from "@/lib/map/events";
 	import type * as maplibre from "maplibre-gl";
 	import GeometryLayer from "@/components/map/GeometryLayer.svelte";
+	import WeatherLayer from "@/components/map/WeatherLayer.svelte";
 	import DebugMenu from "@/components/map/DebugMenu.svelte";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte.js";
 	import { openToast } from "@/lib/ui/toasts.svelte.js";
@@ -173,7 +174,7 @@
 >
 	<MapAttribution {map} class={isUiLeft() ? "left-2 right-auto" : "right-2"} />
 
-	<GeometryLayer id={MapSourceId.SELECTED_WEATHER} reactive={false} />
+	<WeatherLayer />
 	<GeometryLayer
 		show={() => getOpenedMenu() === Menu.SCOUT}
 		id={MapSourceId.SCOUT_BIG_POINTS}
