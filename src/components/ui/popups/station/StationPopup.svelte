@@ -82,7 +82,7 @@
 	import { getStationAttackBonus } from "$lib/utils/stationUtils";
 	import { formatPercentage } from "$lib/utils/numberFormat";
 	import InvasionLineupEntry from "@/components/ui/popups/common/InvasionLineupEntry.svelte";
-	import { getIconBackground } from "$lib/services/uicons.svelte.ts";
+	import { getIconBackground } from "$lib/services/uicons.svelte";
 </script>
 
 {#snippet image(d: MapData)}
