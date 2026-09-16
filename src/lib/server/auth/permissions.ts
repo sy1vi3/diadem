@@ -4,7 +4,12 @@ import { type DiscordGuildData, getGuildMemberInfo } from "@/lib/server/auth/dis
 import type { User } from "@/lib/server/db/internal/schema";
 import { getServerConfig } from "@/lib/services/config/config.server";
 import type { Permissions as ConfigRule } from "@/lib/services/config/configTypes";
-import type { FeaturesKey, PermArea, Perms } from "@/lib/utils/features";
+import {
+	applyWorldwideMapData,
+	type FeaturesKey,
+	type PermArea,
+	type Perms
+} from "@/lib/utils/features";
 import { getLogger } from "@/lib/utils/logger";
 
 const log = getLogger("permissions");
@@ -70,7 +75,7 @@ export async function getEveryonePerms(thisFetch: typeof fetch, geofences?: Koji
 		}
 	}
 	initializedEveryonePerms = true;
-	everyonePerms = perms;
+	everyonePerms = applyWorldwideMapData(perms);
 	return everyonePerms;
 }
 
@@ -122,5 +127,5 @@ export async function updatePermissions(user: User, accessToken: string, thisFet
 		}
 	}
 
-	return permissions;
+	return applyWorldwideMapData(permissions);
 }

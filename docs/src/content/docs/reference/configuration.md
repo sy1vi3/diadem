@@ -419,3 +419,25 @@ Modifiers can be used to adjust sizing and positioning for icons on the map.
   - `scale` to modify the icon's size
   - `offsetX`/`offsetY` to modify the icon's position
   - `spacing` to control the space between icons, when they can be displayed as an array
+
+## Worldwide visibility of permitted map data
+
+Grant `map_data_everywhere` in a permission rule **without `areas`** to let a user
+view their existing map-data features anywhere. It combines grants across all of
+the user's roles/guilds, including area-scoped grants. It does not enable new map
+features: someone with basic gyms still cannot see raids or Pokémon without those
+grants. Weather is included when already permitted; scouting, coverage and Wayfarer
+tool access are not expanded. Area-scoped `*` expands only its map-data features,
+not administrative/tool access. Missing/unresolved area grants remain denied.
+
+```toml
+[[server.permissions]]
+guildId = "your-discord-server-id"
+roleId = "your-worldwide-role-id"
+features = ["scout", "map_data_everywhere"]
+```
+
+`scout` permits submitting scouting requests. `map_data_everywhere` lets those users
+see the resulting map data wherever their existing feature grants allow it. On its
+own, `map_data_everywhere` grants no map data. Existing sessions pick up permission
+changes on the next server permission refresh.

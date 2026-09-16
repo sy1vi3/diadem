@@ -3,6 +3,7 @@ import type { Polygon } from "geojson";
 
 enum ExtraFeature {
 	ALL = "*",
+	MAP_DATA_EVERYWHERE = "map_data_everywhere",
 
 	POKEMON_IV = "pokemon_iv",
 	POKEMON_PVP = "pokemon_pvp",
@@ -127,4 +128,26 @@ export type Perms = {
 export function removeRedundantPermissionAreas(perms: Perms): Perms {
 	if (!perms.everywhere.includes(Features.ALL)) return perms;
 	return { ...perms, areas: [] };
+}
+
+/** Lift existing map-data grants across areas, without granting additional features or tools. */
+export function applyWorldwideMapData(perms: Perms): Perms {
+	if (!perms.everywhere.includes(Features.MAP_DATA_EVERYWHERE)) return perms;
+	const everywhere = new Set(perms.everywhere);
+	const mapFeatures = [...expandWildcard(Features.MAP_OBJECT_ALL), Features.WEATHER];
+	for (const feature of mapFeatures) {
+		if (
+			perms.areas.some((area) =>
+				area.features.some(
+					(held) =>
+						held === Features.ALL ||
+						held === feature ||
+						featureWildcardAncestors[feature]?.includes(held) ||
+						featureImplies[held]?.includes(feature)
+				)
+			)
+		)
+			everywhere.add(feature);
+	}
+	return { ...perms, everywhere: [...everywhere] };
 }
