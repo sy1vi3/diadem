@@ -307,3 +307,20 @@ url = "https://raw.githubusercontent.com/jms412/PkmnShuffleMap/master/UICONS_Hal
 
 base = { scale = 0.25 }
 pokemon = { scale = 0.4 }
+
+# Optional starting filters for new users (saved preferences take precedence).
+# Uncomment to enable Pokemon with a hundo preset. Unspecified layers retain
+# built-in defaults. See client.defaultFilters in the configuration reference.
+# [client.defaultFilters.pokemon]
+# enabled = true
+# [[client.defaultFilters.pokemon.filters]]
+# title = "100% IV"
+# emoji = "💯"
+# iv = { min = 100, max = 100 }
+# modifiers = { glow = { color = "rgba(251, 44, 54, {})" } }
+#
+# Both the parent and sub-layer must be enabled to show quests:
+# [client.defaultFilters.pokestop]
+# enabled = true
+# [client.defaultFilters.pokestop.quest]
+# enabled = true

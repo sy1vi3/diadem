@@ -1,3 +1,4 @@
+import type { DefaultFilters } from "@/lib/services/config/defaultFilters";
 import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 
 import type { FeaturesKey } from "@/lib/utils/features";
@@ -126,6 +127,7 @@ type StaticMap = {
 };
 
 export type ClientConfig = {
+	defaultFilters?: DefaultFilters;
 	mapStyles: MapStyle[];
 	uiconSets: UiconSet[];
 	general: General;

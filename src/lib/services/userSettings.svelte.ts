@@ -11,6 +11,7 @@ import type {
 	FilterTappable
 } from "@/lib/features/filters/filters";
 import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
+import { applyDefaultFilters } from "@/lib/services/config/defaultFilters";
 import { getConfig } from "@/lib/services/config/config";
 import type { AnySearchEntry } from "@/lib/services/search.svelte";
 import { getDefaultMapStyle } from "@/lib/services/themeMode";
@@ -141,23 +142,26 @@ export function getDefaultUserSettings(): UserSettings {
 		enableRotatePitch: true,
 		mapIconSize: 1,
 		externalMapProvider: ExternalMapProvider.GOOGLE,
-		filters: {
-			pokemon: { category: "pokemon", ...defaultFilter() },
-			pokestop: getDefaultPokestopFilter(),
-			gym: getDefaultGymFilter(),
-			station: getDefaultStationFilter(),
-			// s2cell: { category: "s2cell", ...defaultFilter() },
-			s2cell: {
-				category: "s2cell",
-				enabled: false,
-				level: 14,
-				wayfarerMode: false
+		filters: applyDefaultFilters(
+			{
+				pokemon: { category: "pokemon", ...defaultFilter() },
+				pokestop: getDefaultPokestopFilter(),
+				gym: getDefaultGymFilter(),
+				station: getDefaultStationFilter(),
+				// s2cell: { category: "s2cell", ...defaultFilter() },
+				s2cell: {
+					category: "s2cell",
+					enabled: false,
+					level: 14,
+					wayfarerMode: false
+				},
+				nest: { category: "nest", ...defaultFilter() },
+				spawnpoint: { category: "spawnpoint", ...defaultFilter() },
+				route: { category: "route", ...defaultFilter() },
+				tappable: { category: "tappable", ...defaultFilter() }
 			},
-			nest: { category: "nest", ...defaultFilter() },
-			spawnpoint: { category: "spawnpoint", ...defaultFilter() },
-			route: { category: "route", ...defaultFilter() },
-			tappable: { category: "tappable", ...defaultFilter() }
-		},
+			getConfig().defaultFilters
+		),
 		actions: Object.fromEntries(
 			Object.values(MapObjectType).map((type) => [type, defaultActionState()])
 		) as UserSettings["actions"],
