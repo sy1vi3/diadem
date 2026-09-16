@@ -80,7 +80,7 @@
 			type: m.pogo_pokestop(),
 			title: data.name ?? m.unknown_pokestop(),
 			image,
-			headerDetails,
+			headerDetails: isMenuSidebar() ? undefined : headerDetails,
 			main
 		} as MapObjectPopupProps;
 	}
@@ -144,7 +144,7 @@
 
 {#snippet headerDetails(d: MapData)}
 	{@const data = d as PokestopData}
-	{#if !data.isRouteEndpoint && !isFortOutdated(data.updated)}
+	{#if !isMenuSidebar() && !data.isRouteEndpoint && !isFortOutdated(data.updated)}
 		{@const [invasions, kecleons] = getIncidents(data)}
 		<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
 			{#if data.lure_expire_timestamp && data.lure_expire_timestamp >= currentTimestamp()}
@@ -156,17 +156,6 @@
 					>
 				</span>
 			{/if}
-			{#each isMenuSidebar() ? kecleons : [] as kecleon (kecleon.id)}
-				<span class="inline-flex items-center gap-1.5"
-					><ImagePopup
-						class="size-6"
-						src={getIconPokemon({ pokemon_id: KECLEON_ID })}
-						alt=""
-					/>{m.kecleon()}
-					<span class="text-muted-foreground"><Countdown expireTime={kecleon.expiration} /></span
-					></span
-				>
-			{/each}
 		</div>
 		{#if !isMenuSidebar()}
 			{@const quest = data.quests[0]}
@@ -225,6 +214,18 @@
 				</IconValue>
 			</BasicMainCard>
 		{:else}
+			{#if data.lure_expire_timestamp && data.lure_expire_timestamp >= currentTimestamp()}
+				<BasicMainCard>
+					<div class="flex items-center gap-3">
+						<ImagePopup class="size-10 shrink-0" src={getIconItem(data.lure_id ?? 501)} alt="" />
+						<span class="min-w-0 flex-1 text-sm font-semibold">{mItem(data.lure_id ?? 501)}</span>
+						<span class="shrink-0 text-xs tabular-nums"
+							><span class="text-muted-foreground">{m.raid_ends()}</span>
+							<Countdown expireTime={data.lure_expire_timestamp} /></span
+						>
+					</div>
+				</BasicMainCard>
+			{/if}
 			{#if quest}
 				<TitledMainSection Icon={QuestIcon} title={m.pogo_quest()}>
 					<BasicMainCard>
@@ -388,10 +389,30 @@
 				</TitledMainSection>
 			{/if}
 
-			{#if kecleons.length > 0}<QuickSearchButton
-					label={m.find_more_x({ x: m.kecleon() })}
-					onclick={setActiveSearchKecleon}
-				/>{/if}
+			{#if kecleons.length > 0}
+				<BasicMainCard>
+					<div class="space-y-2">
+						{#each kecleons as kecleon (kecleon.id)}
+							<div class="flex items-center gap-3">
+								<ImagePopup
+									class="size-10 shrink-0"
+									src={getIconPokemon({ pokemon_id: KECLEON_ID })}
+									alt=""
+								/>
+								<span class="min-w-0 flex-1 text-sm font-semibold">{m.kecleon()}</span>
+								<span class="shrink-0 text-xs tabular-nums"
+									><span class="text-muted-foreground">{m.raid_ends()}</span>
+									<Countdown expireTime={kecleon.expiration} /></span
+								>
+							</div>
+						{/each}
+					</div>
+					<QuickSearchButton
+						label={m.find_more_x({ x: m.kecleon() })}
+						onclick={setActiveSearchKecleon}
+					/>
+				</BasicMainCard>
+			{/if}
 
 			{#if contests.length > 0 && (data.showcase_expiry ?? 0) >= currentTimestamp()}
 				<TitledMainSection Icon={Medal} title={m.contest()}>
