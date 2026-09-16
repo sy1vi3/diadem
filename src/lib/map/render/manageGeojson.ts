@@ -23,6 +23,21 @@ function getRenderableMapObjectsGeoJson(map: maplibre.Map): FeatureCollection {
 	};
 }
 
+// Coalesce image completions without waiting for the slowest icon in the viewport.
+const pendingSourceUpdates = new WeakMap<maplibre.Map, ReturnType<typeof setTimeout>>();
+
+function scheduleImageUpdate(map: maplibre.Map) {
+	if (pendingSourceUpdates.has(map)) return;
+	pendingSourceUpdates.set(
+		map,
+		setTimeout(() => {
+			pendingSourceUpdates.delete(map);
+			if (getMap() !== map || map._removed) return;
+			updateMapGeojsonSource(map, MapSourceId.MAP_OBJECTS, getRenderableMapObjectsGeoJson(map));
+		}, 32)
+	);
+}
+
 export function updateMapObjectsGeoJson(features: MapObjectFeature[]) {
 	mapObjectsGeoJson = { type: "FeatureCollection", features };
 
@@ -46,7 +61,7 @@ export function updateMapObjectsGeoJson(features: MapObjectFeature[]) {
 			.catch(() => undefined)
 			.then(() => {
 				if (getMap() !== map) return;
-				updateMapGeojsonSource(map, MapSourceId.MAP_OBJECTS, getRenderableMapObjectsGeoJson(map));
+				scheduleImageUpdate(map);
 			});
 	}
 }

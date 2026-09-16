@@ -1,6 +1,6 @@
 import { getActiveSearch } from "@/lib/features/activeSearch.svelte.js";
 import type { AnyFilter, FilterS2Cell } from "@/lib/features/filters/filters";
-import { updateFeatures } from "@/lib/map/featuresGen.svelte";
+import { hasExpiredFeatures, updateFeatures } from "@/lib/map/featuresGen.svelte";
 import { getMap } from "@/lib/map/map.svelte";
 import {
 	clearAllDataLimits,
@@ -15,6 +15,7 @@ import {
 	clearAllMapObjects,
 	clearMapObjects,
 	getMapObjects,
+	getMapObjectsRevision,
 	replaceMapObjects
 } from "@/lib/mapObjects/mapObjectsState.svelte.js";
 import {
@@ -350,6 +351,7 @@ export async function updateAllMapObjects(removeOld: boolean = true, onlyChanged
 	const controller = new AbortController();
 	currentController = controller;
 
+	const revisionBefore = getMapObjectsRevision();
 	const activeSearch = getActiveSearch();
 	let limitsToClear: MapObjectType[] = [];
 
@@ -410,6 +412,8 @@ export async function updateAllMapObjects(removeOld: boolean = true, onlyChanged
 
 	if (controller.signal.aborted) return;
 	currentController = undefined;
-	updateFeatures(getMapObjects());
+	if (!onlyChanged || getMapObjectsRevision() !== revisionBefore || hasExpiredFeatures()) {
+		updateFeatures(getMapObjects());
+	}
 	for (const type of limitsToClear) clearDataLimit(type);
 }
