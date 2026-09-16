@@ -23,7 +23,7 @@ import {
 	MapObjectType
 } from "@/lib/mapObjects/mapObjectTypes";
 import { getS2CellMapObjects } from "@/lib/mapObjects/s2cells.js";
-import { updateWeather } from "@/lib/mapObjects/weather.svelte";
+import { updateVisibleWeatherCells, updateWeather } from "@/lib/mapObjects/weather.svelte";
 import type { MapObjectResponse } from "@/lib/server/queryMapObjects/MapObjectQuery";
 import {
 	combinedGolbatFortTypes,
@@ -403,7 +403,8 @@ export async function updateAllMapObjects(removeOld: boolean = true, onlyChanged
 				)
 			),
 			updateForts(),
-			updateWeather()
+			updateWeather(),
+			updateVisibleWeatherCells()
 		]);
 		limitsToClear = [...otherResults, ...fortResults].filter((type) => type !== undefined);
 	}

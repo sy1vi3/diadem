@@ -19,7 +19,10 @@ vi.mock("@/lib/mapObjects/mapObjectsState.svelte.js", () => ({
 	replaceMapObjects: state.replace
 }));
 vi.mock("@/lib/mapObjects/s2cells.js", () => ({ getS2CellMapObjects: () => [] }));
-vi.mock("@/lib/mapObjects/weather.svelte", () => ({ updateWeather: vi.fn() }));
+vi.mock("@/lib/mapObjects/weather.svelte", () => ({
+	updateWeather: vi.fn(),
+	updateVisibleWeatherCells: vi.fn()
+}));
 vi.mock("@/lib/mapObjects/currentSelectedState.svelte", () => ({
 	getCurrentSelectedData: () => undefined
 }));
