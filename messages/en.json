@@ -711,5 +711,7 @@
 	"copy_coordinates": "Copy coordinates",
 	"pokemon_level_short": "Lv {level}",
 	"pokemon_weather_boosted": "{weather} · boosted",
+	"pokemon_timer_verified": "verified",
+	"pokemon_timer_estimated": "estimated",
 	"pokemon_level_label_short": "Lv"
 }

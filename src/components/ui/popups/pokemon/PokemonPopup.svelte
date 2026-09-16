@@ -1,5 +1,6 @@
 <script module lang="ts">
 	import type { Snippet } from "svelte";
+	import { timestampToLocalTime } from "$lib/utils/timestampToLocalTime";
 	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
@@ -486,6 +487,43 @@
 
 	<TitledMainSection Icon={Info} title={m.about_this_pokemon({ name: speciesName(data) })}>
 		<StatsMainCard>
+			{#if data.cp != null}<StatsMainCardEntry name={m.cp()} value={formatNumber(data.cp)} />{/if}
+			{#if data.level != null}<StatsMainCardEntry
+					name={m.level()}
+					value={formatNumber(data.level)}
+				/>{/if}
+			{#if data.iv != null}{@const iv = data.iv}<StatsMainCardEntry name={m.pogo_ivs()}
+					>{#snippet value()}{@render coloredIvs(iv, 1)}{/snippet}</StatsMainCardEntry
+				>{/if}
+			{#if data.atk_iv != null || data.def_iv != null || data.sta_iv != null}
+				<dl
+					class="grid w-full grid-cols-3 gap-3 border-y border-border py-3 text-center text-sm tabular-nums"
+				>
+					{#each [{ label: m.attack(), value: data.atk_iv }, { label: m.defense(), value: data.def_iv }, { label: m.stamina(), value: data.sta_iv }] as stat}
+						<div>
+							<dt class="text-xs text-muted-foreground">{stat.label}</dt>
+							<dd class="mt-1">
+								{stat.value ?? "–"} <span class="text-xs text-muted-foreground">/ 15</span>
+							</dd>
+						</div>
+					{/each}
+				</dl>
+			{/if}
+			{#if data.expire_timestamp}<StatsMainCardEntry name={m.popup_despawns()}
+					>{#snippet value()}<span
+							>{timestampToLocalTime(data.expire_timestamp)}
+							<span class="text-xs text-muted-foreground"
+								>· {data.expire_timestamp_verified
+									? m.pokemon_timer_verified()
+									: m.pokemon_timer_estimated()}</span
+							></span
+						>{/snippet}</StatsMainCardEntry
+				>{/if}
+			{#if data.weather != null}<StatsMainCardEntry
+					name={m.weather_boost()}
+					value={data.weather ? mWeather(data.weather) : m.no_weather_boost()}
+				/>{/if}
+
 			<StatsMainCardEntry
 				Icon={data.gender === 1 ? Mars : data.gender === 2 ? Venus : CircleSmall}
 				name={m.pokemon_gender()}
