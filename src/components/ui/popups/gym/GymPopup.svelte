@@ -55,6 +55,7 @@
 	import RoutesStartingHere from "@/components/ui/popups/route/RoutesStartingHere.svelte";
 
 	import GymDefenderRow from "./GymDefenderRow.svelte";
+	import MobileActivityPreview from "../common/MobileActivityPreview.svelte";
 	export { image, headerDetails, main };
 
 	export function getPopupPropsGym(data: MapData) {
@@ -128,23 +129,17 @@
 	/>
 {/snippet}
 
-{#snippet raidSummary(data: GymData, desktop: boolean)}
-	<div class="flex items-center" class:gap-3={desktop} class:gap-2={!desktop} class:mt-2={!desktop}>
-		<ImagePopup
-			class={desktop ? "size-24 shrink-0" : "size-9 shrink-0"}
-			src={getRaidIcon(data)}
-			alt=""
-		/>
+{#snippet raidSummary(data: GymData)}
+	<div class="flex items-center gap-3">
+		<ImagePopup class="size-24 shrink-0" src={getRaidIcon(data)} alt="" />
 		<div class="min-w-0">
-			<p class="font-semibold break-words" class:text-lg={desktop} class:text-sm={!desktop}>
+			<p class="font-semibold break-words text-lg">
 				{getRaidTitle(data)}
-				{#if data.raid_pokemon_id}<span
-						class="text-xs font-normal text-muted-foreground"
-						class:block={desktop}
-						class:ml-2={!desktop}>{mRaid(data.raid_level)}</span
+				{#if data.raid_pokemon_id}<span class="block text-xs font-normal text-muted-foreground"
+						>{mRaid(data.raid_level)}</span
 					>{/if}
 			</p>
-			<p class="text-xs text-muted-foreground" class:mt-1={desktop}>
+			<p class="mt-1 text-xs text-muted-foreground">
 				{isRaidHatched(data) ? m.raid_ends() : m.raid_starts()}
 				<Countdown expireTime={getRaidExpire(data)} />
 			</p>
@@ -155,7 +150,18 @@
 {#snippet headerDetails(d: MapData)}
 	{@const data = d as GymData}
 	{#if !isMenuSidebar() && !data.isRouteEndpoint && !isFortOutdated(data.updated) && isActiveRaid(data)}
-		{@render raidSummary(data, false)}
+		<MobileActivityPreview
+			activities={[
+				{
+					kind: "raid",
+					icon: getRaidIcon(data),
+					title: getRaidTitle(data),
+					subtitle: data.raid_pokemon_id ? mRaid(data.raid_level) : undefined,
+					expires: getRaidExpire(data) ?? undefined,
+					timerLabel: isRaidHatched(data) ? m.raid_ends() : m.raid_starts()
+				}
+			]}
+		/>
 	{/if}
 {/snippet}
 
@@ -181,9 +187,7 @@
 			{#if activeRaid}<TitledMainSection Icon={RaidIcon} title={m.raid()}>
 					<BasicMainCard>
 						<div class="space-y-3">
-							{#if isMenuSidebar()}
-								{@render raidSummary(data, true)}
-							{/if}
+							{@render raidSummary(data)}
 							<!--Expiration-->
 							<div>
 								<IconValue class="mb-1" Icon={Clock}>

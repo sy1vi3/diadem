@@ -12,7 +12,7 @@
 	import PopupBaseStatic, {
 		type MapObjectPopupProps
 	} from "@/components/ui/popups/common/PopupBaseStatic.svelte";
-	import type { MapData } from "$lib/mapObjects/mapObjectTypes";
+	import { type MapData, MapObjectType } from "$lib/mapObjects/mapObjectTypes";
 	import {
 		centerRequestedMapObjectIfPopupCovers,
 		getPopupVisibilityRequest,
@@ -133,7 +133,14 @@
 				<Drawer.Content
 					class="flex min-h-0 flex-1 flex-col [&_[data-popup-body]]:[scrollbar-gutter:stable_both-edges]"
 				>
-					<PopupBaseStatic {coords} {data} {props} onlyShowNavigationButton={snapPoint === 1} />
+					<PopupBaseStatic
+						{coords}
+						{data}
+						{props}
+						onlyShowNavigationButton={snapPoint === 1 &&
+							data?.type !== MapObjectType.GYM &&
+							data?.type !== MapObjectType.POKESTOP}
+					/>
 				</Drawer.Content>
 			</Drawer.Popup>
 		</Drawer.Viewport>

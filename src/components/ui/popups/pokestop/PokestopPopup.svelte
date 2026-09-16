@@ -1,4 +1,8 @@
 <script module lang="ts">
+	import { isMenuSidebar } from "$lib/utils/device";
+	import MobileActivityPreview, {
+		type PopupActivity
+	} from "../common/MobileActivityPreview.svelte";
 	import { getConfig } from "$lib/services/config/config";
 	import type { MapObjectPopupProps } from "@/components/ui/popups/common/PopupBaseStatic.svelte";
 	import * as m from "$lib/paraglide/messages";
@@ -141,7 +145,7 @@
 {#snippet headerDetails(d: MapData)}
 	{@const data = d as PokestopData}
 	{#if !data.isRouteEndpoint && !isFortOutdated(data.updated)}
-		{@const [, kecleons] = getIncidents(data)}
+		{@const [invasions, kecleons] = getIncidents(data)}
 		<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
 			{#if data.lure_expire_timestamp && data.lure_expire_timestamp >= currentTimestamp()}
 				<span class="inline-flex flex-wrap items-center gap-1.5">
@@ -152,7 +156,7 @@
 					>
 				</span>
 			{/if}
-			{#each kecleons as kecleon (kecleon.id)}
+			{#each isMenuSidebar() ? kecleons : [] as kecleon (kecleon.id)}
 				<span class="inline-flex items-center gap-1.5"
 					><ImagePopup
 						class="size-6"
@@ -164,6 +168,40 @@
 				>
 			{/each}
 		</div>
+		{#if !isMenuSidebar()}
+			{@const quest = data.quests[0]}
+			{@const activities: PopupActivity[] = [
+                ...(quest && (!quest.expires || quest.expires > currentTimestamp()) ? [{
+                    kind: "quest" as const,
+                    icon: getIconReward(quest.reward.type, quest.reward.info),
+                    title: getRewardText(quest.reward),
+                    subtitle: givesQuestBackground(quest) ? m.with_background() : m.pogo_quest(),
+                    description: mQuest(quest.title, quest.target)
+                }] : []),
+                ...invasions.map((invasion) => ({
+                    kind: "invasion" as const,
+                    icon: getIconInvasion(invasion.character, invasion.confirmed),
+                    title: mCharacter(invasion.character, { confirmed: invasion.confirmed }),
+                    expires: invasion.expiration,
+                    timerLabel: m.raid_ends()
+                })),
+                ...kecleons.map((kecleon) => ({
+                    kind: "kecleon" as const,
+                    icon: getIconPokemon({ pokemon_id: KECLEON_ID }),
+                    title: m.kecleon(),
+                    expires: kecleon.expiration,
+                    timerLabel: m.raid_ends()
+                }))
+            ]}
+			{#if activities.length}
+				<div
+					class:mt-2={!!data.lure_expire_timestamp &&
+						data.lure_expire_timestamp >= currentTimestamp()}
+				>
+					<MobileActivityPreview {activities} />
+				</div>
+			{/if}
+		{/if}
 	{/if}
 {/snippet}
 
