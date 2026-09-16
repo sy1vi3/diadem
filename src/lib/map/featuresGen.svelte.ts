@@ -35,6 +35,7 @@ import { routeStartsAt } from "@/lib/utils/routeUtils";
 type FeatureEntry = {
 	lat: number;
 	lon: number;
+	data: MapData;
 	features: MapObjectFeature[];
 };
 
@@ -50,6 +51,11 @@ const RADIUS_FILL_SELECTED = "rgba(56, 189, 248, 0.2)";
 
 let features: Features = getEmptyFeatures();
 let selectedFeatures: MapObjectFeature[] = [];
+let nextFeatureExpiry = Infinity;
+
+export function hasExpiredFeatures() {
+	return nextFeatureExpiry < currentTimestamp();
+}
 
 function getEmptyFeatures(): Features {
 	return allMapObjectTypes.reduce((acc, val) => {
@@ -229,7 +235,14 @@ function syncRouteLineFeatures(currentSelected: MapData | null) {
 
 export function refreshRouteFeatures() {
 	syncRouteLineFeatures(getCurrentSelectedData());
-	updateMapObjectsGeoJson(getFlattenedFeatures());
+	const flattened = getFlattenedFeatures();
+	nextFeatureExpiry = Infinity;
+	for (const feature of flattened) {
+		if ("expires" in feature.properties && feature.properties.expires) {
+			nextFeatureExpiry = Math.min(nextFeatureExpiry, feature.properties.expires);
+		}
+	}
+	updateMapObjectsGeoJson(flattened);
 }
 
 export function updateFeatures(mapObjects: MapObjectsStateType) {
@@ -258,6 +271,7 @@ export function updateFeatures(mapObjects: MapObjectsStateType) {
 						feature.properties.expires < currentTimestamp()
 				) ||
 				!obj ||
+				entry.data !== obj ||
 				entry.lon !== obj.lon ||
 				entry.lat !== obj.lat
 			) {
@@ -286,6 +300,7 @@ export function updateFeatures(mapObjects: MapObjectsStateType) {
 		if (radiusFeature) subFeatures.unshift(radiusFeature);
 
 		features[obj.type][obj.mapId] = {
+			data: obj,
 			lat: obj.lat,
 			lon: obj.lon,
 			features: subFeatures
@@ -293,5 +308,12 @@ export function updateFeatures(mapObjects: MapObjectsStateType) {
 		if (isSelected) selectedFeatures = [...selectedFeatures, ...subFeatures];
 	}
 	syncRouteLineFeatures(getCurrentSelectedData());
-	updateMapObjectsGeoJson(getFlattenedFeatures());
+	const flattened = getFlattenedFeatures();
+	nextFeatureExpiry = Infinity;
+	for (const feature of flattened) {
+		if ("expires" in feature.properties && feature.properties.expires) {
+			nextFeatureExpiry = Math.min(nextFeatureExpiry, feature.properties.expires);
+		}
+	}
+	updateMapObjectsGeoJson(flattened);
 }
