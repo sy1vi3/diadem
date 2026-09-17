@@ -1,3 +1,4 @@
+import { mergeHomepage } from "../../homepage/config";
 import type { ClientConfig, SiteConfig } from "./configTypes";
 
 export function normalizeSiteOrigin(value: string): string {
@@ -23,6 +24,7 @@ export function createSiteConfigs(base: ClientConfig, sites: SiteConfig[] = []) 
 		if (result.has(origin)) throw new Error(`Duplicate site origin: ${origin}`);
 		result.set(origin, {
 			...base,
+			homepage: mergeHomepage(base.homepage, site.client.homepage),
 			general: { ...base.general, url: origin, ...site.client.general },
 			discord: { ...base.discord, ...site.client.discord },
 			mapPositions: { ...base.mapPositions, ...site.client.mapPositions },

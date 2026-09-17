@@ -1,3 +1,4 @@
+import type { HomepageInput, HomepageServerInput } from "@/lib/homepage/config";
 import type { DefaultFilters } from "@/lib/services/config/defaultFilters";
 import { MapObjectType } from "@/lib/mapObjects/mapObjectTypes";
 
@@ -129,6 +130,7 @@ type StaticMap = {
 };
 
 export type ClientConfig = {
+	homepage?: HomepageInput;
 	defaultFilters?: DefaultFilters;
 	mapStyles: MapStyle[];
 	uiconSets: UiconSet[];
@@ -143,6 +145,7 @@ export type ClientConfig = {
 };
 
 export type ServerConfig = {
+	homepage?: HomepageServerInput;
 	golbat: {
 		url: string;
 		auth?: string;
@@ -203,6 +206,7 @@ export type ServerConfig = {
 export type SiteConfig = {
 	origin: string;
 	client: {
+		homepage?: HomepageInput;
 		general?: Partial<General>;
 		discord?: Partial<ClientDiscord>;
 		mapPositions?: Partial<MapPositions>;
