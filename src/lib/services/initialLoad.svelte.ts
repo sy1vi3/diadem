@@ -46,18 +46,28 @@ export function getLoadingProgress(offset: number = 0) {
 
 async function loadingWrapper<T>(func: Promise<T>, loadedFeature: LoadedFeature): Promise<T> {
 	const result = await func;
-	loadedFeatures.push(loadedFeature);
+	if (!loadedFeatures.includes(loadedFeature)) loadedFeatures.push(loadedFeature);
 	return result;
 }
 
-export async function load() {
+let loadPromise: Promise<void> | undefined;
+
+export function load() {
+	return (loadPromise ??= loadMapFeatures().catch((error) => {
+		loadPromise = undefined;
+		throw error;
+	}));
+}
+
+async function loadMapFeatures() {
 	const userDetails = loadingWrapper(updateUserDetails(), LoadedFeature.USER_DETAILS);
 	const serverUserSettings = (async () => {
 		await userDetails;
 		if (browser && getUserDetails().details) {
 			await getUserSettingsFromServer();
 		}
-		loadedFeatures.push(LoadedFeature.SERVER_USER_SETTINGS);
+		if (!loadedFeatures.includes(LoadedFeature.SERVER_USER_SETTINGS))
+			loadedFeatures.push(LoadedFeature.SERVER_USER_SETTINGS);
 	})();
 
 	await Promise.all([
