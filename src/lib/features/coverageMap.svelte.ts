@@ -1,3 +1,5 @@
+import { getConfig } from "@/lib/services/config/config";
+import { regionalCoverage } from "@/lib/homepage/coverage";
 import { goto } from "$app/navigation";
 import { getKojiGeofences, type KojiFeature } from "@/lib/features/koji";
 import { CoverageMapLayerId } from "@/lib/map/layers";
@@ -62,7 +64,7 @@ export function getCoverageMapAreas(): FeatureCollection<Polygon, CoverageMapAre
 		const fillColor = styles.getPropertyValue("--coverage-polygon-stroke");
 		const strokeColor = styles.getPropertyValue("--coverage-polygon-fill");
 		return featureCollection(
-			getKojiGeofences().map((g) => {
+			getRegionalCoverage().map((g) => {
 				return {
 					...g,
 					id: "koji-" + g.properties.id,
@@ -129,4 +131,12 @@ export function getCoverageMap() {
 
 export function getCoverageMapInvokedFromMap() {
 	return invokedFromMap;
+}
+
+export function getRegionalCoverage(includeAncestors = false) {
+	return regionalCoverage(
+		getKojiGeofences(),
+		getConfig().homepage?.coverageAreaIds ?? [],
+		includeAncestors
+	);
 }

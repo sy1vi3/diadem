@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getKojiGeofences, type KojiFeature } from "@/lib/features/koji";
+	import { type KojiFeature } from "@/lib/features/koji";
 	import Button from "@/components/ui/input/Button.svelte";
 	import LucideIcon from "@/components/utils/LucideIcon.svelte";
 	import { ChevronRight } from "@lucide/svelte";
-	import { selectCoverageMapArea } from "@/lib/features/coverageMap.svelte";
+	import { selectCoverageMapArea, getRegionalCoverage } from "@/lib/features/coverageMap.svelte";
 	import { SvelteSet } from "svelte/reactivity";
 	import { slide } from "svelte/transition";
 	import { hasLoadedFeature, LoadedFeature } from "@/lib/services/initialLoad.svelte";
@@ -74,7 +74,7 @@
 
 <div class="overflow-hidden">
 	{#if hasLoadedFeature(LoadedFeature.KOJI)}
-		{#each getKojiGeofences() as area (area.properties.id)}
+		{#each getRegionalCoverage(true) as area (area.properties.id)}
 			{#if !area.properties.parent}
 				{@render areaEntry(area)}
 			{/if}
