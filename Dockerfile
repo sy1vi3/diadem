@@ -56,6 +56,7 @@ COPY --chown=diadem:diadem docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 USER diadem
 ENV NODE_ENV=production
+ENV BODY_SIZE_LIMIT=16M
 ENV HOST=0.0.0.0
 ENV PORT=3900
 

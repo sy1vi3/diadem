@@ -50,12 +50,21 @@ const permissionCache: TTLCache<string, Perms> = new TTLCache({
 const authLog = getServerLogger("auth");
 const permissionUpdateInFlight = new Map<string, Promise<Perms>>();
 
-const publicRoutePrefixes = ["/api/locale/", "/assets/"];
-const publicRoutes = new Set(["/api/config", "/api/pogodata", "/api/koji", "/api/stats"]);
+const publicRoutePrefixes = ["/api/locale/", "/assets/", "/api/homepage/webhook/"];
+const publicRoutes = new Set([
+	"/api/config",
+	"/api/pogodata",
+	"/api/koji",
+	"/api/stats",
+	"/api/homepage/stats",
+	"/api/homepage/live"
+]);
 
 function isPublicRoute(pathname: string) {
 	return (
-		publicRoutes.has(pathname) || publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix))
+		(pathname === "/" && getClientConfig().general.customHome) ||
+		publicRoutes.has(pathname) ||
+		publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix))
 	);
 }
 

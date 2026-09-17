@@ -5,7 +5,10 @@ import { uiconsIndexProvider } from "@/lib/server/provider/uiconsIndexProvider";
 import { startFortApiDetection } from "@/lib/server/api/golbat/fortAvailability";
 import { getLogger } from "@/lib/utils/logger";
 
+import { initHomepageFeed } from "@/lib/server/homepage/live";
+
 export async function initDiadem() {
+	initHomepageFeed();
 	const log = getLogger("init");
 	log.info("Initializing Diadem");
 

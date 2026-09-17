@@ -29,6 +29,13 @@ if (workerCount === 1) {
 	console.log(`Starting Diadem cluster with ${workerCount} workers`);
 	for (let i = 0; i < workerCount; i += 1) cluster.fork();
 
+	// Deliver homepage sightings to streams connected to any worker.
+	cluster.on("message", (sender, message) => {
+		if (message?.type !== "homepage:sightings" || !Array.isArray(message.events)) return;
+		for (const worker of Object.values(cluster.workers))
+			if (worker && worker.id !== sender.id && worker.isConnected()) worker.send(message);
+	});
+
 	cluster.on("exit", (worker, code, signal) => {
 		if (shuttingDown) return;
 		console.error(
