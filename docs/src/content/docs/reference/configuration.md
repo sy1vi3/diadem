@@ -623,3 +623,8 @@ features = ["scout", "map_data_everywhere"]
 see the resulting map data wherever their existing feature grants allow it. On its
 own, `map_data_everywhere` grants no map data. Existing sessions pick up permission
 changes on the next server permission refresh.
+
+
+## Regional homepage
+
+`client.homepage` configures the custom homepage’s theme, raster background, inline tiers, and regional feed. `sites.client.homepage` overrides those defaults per exact origin. `server.homepage` defines webhook settings and shared regions. See the [homepage guide](/guides/homepage/) for the configuration and webhook setup.

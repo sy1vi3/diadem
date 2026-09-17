@@ -713,5 +713,16 @@
 	"pokemon_weather_boosted": "{weather} · boosted",
 	"pokemon_timer_verified": "verified",
 	"pokemon_timer_estimated": "estimated",
-	"pokemon_level_label_short": "Lv"
+	"pokemon_level_label_short": "Lv",
+	"home_pokemon_live": "Live Pokémon · all regions",
+	"home_navigation": "Homepage navigation",
+	"home_tiers": "Tiers",
+	"home_open_map": "Open map",
+	"home_stats_stale": "Last available counts",
+	"home_resume_sightings": "Resume sightings",
+	"home_pause_sightings": "Pause sightings",
+	"home_dismiss_sighting": "Dismiss sighting",
+	"home_pokestops": "Pokéstops",
+	"home_gyms": "Gyms",
+	"home_coverage": "Coverage"
 }
